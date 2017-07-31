@@ -1,31 +1,58 @@
 package api
 
 import (
-  "net/http"
-  "fmt"
-  "errors"
+	"context"
+	"net/http"
+	"strconv"
 
-  "github.com/go-chi/render"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/render"
+	"github.com/jacsmith21/lukabox"
+	"github.com/jacsmith21/lukabox/core/db"
 )
 
-//User a reguler user
-type User struct {
-	ID        int64  `json:"id"`
-	Email     string `json:"email"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Archived  bool   `json:"archived"`
+// UserCtx is used to create a user context by id
+func UserCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var user *lukabox.User
+		var err error
+		var id int
+
+		userID := chi.URLParam(r, "id")
+		if userID == "" {
+			render.Render(w, r, ErrInvalidRequest(err))
+			return
+		}
+
+		id, err = strconv.Atoi(userID)
+		if err != nil {
+			render.Render(w, r, ErrInvalidRequest(err))
+			return
+		}
+
+		user, err = db.GetUser(id)
+		if err != nil {
+			render.Render(w, r, ErrNotFound)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "user", user)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
 
-var users = []*User{
-	{ID: 1, Email: "jacob.smith@unb.ca", FirstName: "Jacob", LastName: "Smith", Archived: false},
-	{ID: 2, Email: "j.a.smith@live.ca", FirstName: "Jacob", LastName: "Smith", Archived: false},
-	{ID: 3, Email: "jacobsmithunb@gmail.com", FirstName: "Jacob", LastName: "Smith", Archived: false},
+// GetUser gets a user by id
+func GetUser(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user").(*lukabox.User)
+	if err := render.Render(w, r, NewUserResponse(user)); err != nil {
+		render.Render(w, r, ErrRender(err))
+		return
+	}
 }
 
 // UserResponse for json
 type UserResponse struct {
-	*User
+	*lukabox.User
 }
 
 // Render does pre-processing before a response is marshalled
@@ -34,13 +61,13 @@ func (rd *UserResponse) Render(w http.ResponseWriter, r *http.Request) error {
 }
 
 // NewUserResponse ceates a new user reponse
-func NewUserResponse(user *User) *UserResponse {
+func NewUserResponse(user *lukabox.User) *UserResponse {
 	resp := &UserResponse{User: user}
 	return resp
 }
 
 // NewUserListResponse creates a new renderer list of reponses
-func NewUserListResponse(users []*User) []render.Renderer {
+func NewUserListResponse(users []*lukabox.User) []render.Renderer {
 	list := []render.Renderer{}
 	for _, user := range users {
 		list = append(list, NewUserResponse(user))
@@ -48,9 +75,17 @@ func NewUserListResponse(users []*User) []render.Renderer {
 	return list
 }
 
-// ListUsers lists the users using the RenderList function
-func ListUsers(w http.ResponseWriter, r *http.Request) {
-	err := render.RenderList(w, r, NewUserListResponse(users))
+// Users lists the users using the RenderList function
+func Users(w http.ResponseWriter, r *http.Request) {
+	var users []*lukabox.User
+	var err error
+
+	if users, err = db.GetUsers(); err != nil {
+		render.Render(w, r, ErrRender(err))
+		return
+	}
+
+	err = render.RenderList(w, r, NewUserListResponse(users))
 	if err != nil {
 		render.Render(w, r, ErrRender(err))
 		return
@@ -59,7 +94,7 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 
 //UserRequest a reuqest to create a user
 type UserRequest struct {
-	*User
+	*lukabox.User
 }
 
 // Bind post-processing after decode
@@ -77,7 +112,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := data.User
-	dbCreateUser(user)
+	db.CreateUser(user)
 
 	render.Status(r, http.StatusCreated)
 	render.Render(w, r, NewUserResponse(user))
@@ -85,7 +120,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 // UpdateUser updates the user
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value("user").(*User)
+	user := r.Context().Value("user").(*lukabox.User)
 
 	data := &UserRequest{User: user}
 	if err := render.Bind(r, data); err != nil {
@@ -94,33 +129,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user = data.User
-	dbUpdateUser(user.ID, user)
+	db.UpdateUser(user.ID, user)
 
 	render.Render(w, r, NewUserResponse(user))
-}
-
-
-func dbCreateUser(user *User) (string, error) {
-	user.ID = users[len(users)-1].ID + 1
-	users = append(users, user)
-	return fmt.Sprintf("%d", user.ID), nil
-}
-
-func dbGetUser(id int64) (*User, error) {
-	for _, u := range users {
-		if u.ID == id {
-			return u, nil
-		}
-	}
-	return nil, errors.New("user not found")
-}
-
-func dbUpdateUser(id int64, user *User) (*User, error) {
-	for i, u := range users {
-		if u.ID == id {
-			users[i] = user
-			return u, nil
-		}
-	}
-	return nil, errors.New("article not found")
 }

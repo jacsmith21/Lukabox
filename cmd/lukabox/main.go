@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/render"
+	"github.com/jacsmith21/lukabox/core/api"
 )
 
 func main() {
@@ -31,9 +32,14 @@ func main() {
 	})
 
 	r.Route("/users", func(r chi.Router) {
-		r.Get("/", users.ListUsers)
-		r.Put("/", users.CreateUser)
-		r.Post("/", users.UpdateUser)
+		r.Get("/", api.Users)
+		r.Put("/", api.CreateUser)
+
+		r.Route("/{id}", func(r chi.Router) {
+			r.Use(api.UserCtx)
+			r.Get("/", api.GetUser)
+			r.Post("/", api.UpdateUser)
+		})
 	})
 
 	http.ListenAndServe(":3000", r)
