@@ -1,17 +1,25 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/jwtauth"
 	"github.com/go-chi/render"
 	"github.com/jacsmith21/lukabox/core/api"
 )
 
+var tokenAuth *jwtauth.JwtAuth
+
 func main() {
 	r := chi.NewRouter()
+
+	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
+	_, tokenString, _ := tokenAuth.Encode(jwtauth.Claims{"user_id": 123})
+	fmt.Printf("DEBUG: a sample jwt is %s\n\n", tokenString)
 
 	// A good base middleware stack
 	r.Use(middleware.RequestID)
@@ -42,5 +50,13 @@ func main() {
 		})
 	})
 
-	http.ListenAndServe(":3000", r)
+	r.Route("/pills", func(r chi.Router) {
+		r.Use(jwtauth.Verifier(tokenAuth))
+		r.Use(jwtauth.Authenticator)
+		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("welcome :) it worked!"))
+		})
+	})
+
+	http.ListenAndServe(":3001", r)
 }
