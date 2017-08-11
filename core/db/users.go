@@ -8,9 +8,9 @@ import (
 )
 
 var users = []*lukabox.User{
-	{ID: 1, Email: "jacob.smith@unb.ca", FirstName: "Jacob", LastName: "Smith", Archived: false},
-	{ID: 2, Email: "j.a.smith@live.ca", FirstName: "Jacob", LastName: "Smith", Archived: false},
-	{ID: 3, Email: "jacobsmithunb@gmail.com", FirstName: "Jacob", LastName: "Smith", Archived: false},
+	{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false},
+	{ID: 2, Email: "j.a.smith@live.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false},
+	{ID: 3, Email: "jacobsmithunb@gmail.com", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false},
 }
 
 //CreateUser creates a user in the database
@@ -35,6 +35,16 @@ func GetUser(id int) (*lukabox.User, error) {
 	return nil, errors.New("user not found")
 }
 
+//GetUserByEmail retrieves a user from the database
+func GetUserByEmail(email string) (*lukabox.User, error) {
+	for _, u := range users {
+		if u.Email == email {
+			return u, nil
+		}
+	}
+	return nil, errors.New("user not found")
+}
+
 //UpdateUser updates a user in the datbase
 func UpdateUser(id int, user *lukabox.User) (*lukabox.User, error) {
 	for i, u := range users {
@@ -44,4 +54,17 @@ func UpdateUser(id int, user *lukabox.User) (*lukabox.User, error) {
 		}
 	}
 	return nil, errors.New("article not found")
+}
+
+//AuthenticateUser authenticates a user with credentials
+func AuthenticateUser(email string, password string) bool {
+	for _, u := range users {
+		if u.Email == email {
+			if u.Password == password {
+				return true
+			}
+			return false
+		}
+	}
+	return false
 }
