@@ -1,4 +1,4 @@
-package lukabox
+package domain
 
 //User a reguler user
 type User struct {

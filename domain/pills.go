@@ -1,4 +1,4 @@
-package lukabox
+package domain
 
 import "time"
 

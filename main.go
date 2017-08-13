@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -15,6 +16,8 @@ var tokenAuth *jwtauth.JwtAuth
 
 func main() {
 	r := chi.NewRouter()
+
+	tokenAuth = jwtauth.New("HS256", []byte("secret"), nil)
 
 	// A good base middleware stack
 	r.Use(middleware.RequestID)
@@ -50,31 +53,12 @@ func main() {
 
 	r.Route("/pills", func(r chi.Router) {
 		r.Use(jwtauth.Verifier(tokenAuth))
-		r.Use(Authenticator)
+		r.Use(jwtauth.Authenticator)
 		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("welcome :) it worked!"))
+			_, claims, _ := jwtauth.FromContext(r.Context())
+			w.Write([]byte(fmt.Sprintf("welcome :) it worked! id: %v", claims["id"])))
 		})
 	})
 
 	http.ListenAndServe(":3001", r)
-}
-
-//Authenticator authenticates the user credentials
-func Authenticator(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token, _, err := jwtauth.FromContext(r.Context())
-
-		if err != nil {
-			http.Error(w, http.StatusText(401), 401)
-			return
-		}
-
-		if token == nil || !token.Valid {
-			http.Error(w, http.StatusText(401), 401)
-			return
-		}
-
-		// Token is authenticated, pass it through
-		next.ServeHTTP(w, r)
-	})
 }
