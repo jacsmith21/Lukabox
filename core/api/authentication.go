@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/jwtauth"
 	"github.com/go-chi/render"
 	"github.com/jacsmith21/lukabox/core/db"
+	log "github.com/jacsmith21/lukabox/ext/logrus"
 )
 
 //UserCredentials a reguler user credentials
@@ -48,6 +49,7 @@ func NewTokenResponse(token *Token) *TokenResponse {
 
 //Login login handler
 func Login(w http.ResponseWriter, r *http.Request) {
+	log.WithField("method", "Login")
 	credentials := &UserCredentials{}
 	if err := render.Bind(r, credentials); err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
@@ -63,11 +65,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
 	user, _ := db.GetUserByEmail(credentials.Email)
 	claims := jwtauth.Claims{"id": user.ID}
+	log.WithField("id", user.ID).Debug("adding id to claims")
 	_, tokenString, _ := tokenAuth.Encode(claims)
 	token := &Token{tokenString}
 	if err := render.Render(w, r, NewTokenResponse(token)); err != nil {
 		render.Render(w, r, ErrRender(err))
 		return
 	}
-	fmt.Printf("DEBUG: a sample jwt is %s\n\n", tokenString)
 }

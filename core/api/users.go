@@ -7,14 +7,14 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
-	"github.com/jacsmith21/lukabox"
 	"github.com/jacsmith21/lukabox/core/db"
+	"github.com/jacsmith21/lukabox/domain"
 )
 
 // UserCtx is used to create a user context by id
 func UserCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var user *lukabox.User
+		var user *domain.User
 		var err error
 		var id int
 
@@ -43,7 +43,7 @@ func UserCtx(next http.Handler) http.Handler {
 
 // GetUser gets a user by id
 func GetUser(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value("user").(*lukabox.User)
+	user := r.Context().Value("user").(*domain.User)
 	if err := render.Render(w, r, NewUserResponse(user)); err != nil {
 		render.Render(w, r, ErrRender(err))
 		return
@@ -52,7 +52,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 
 // UserResponse for json
 type UserResponse struct {
-	*lukabox.User
+	*domain.User
 }
 
 // Render does pre-processing before a response is marshalled
@@ -61,13 +61,13 @@ func (rd *UserResponse) Render(w http.ResponseWriter, r *http.Request) error {
 }
 
 // NewUserResponse ceates a new user reponse
-func NewUserResponse(user *lukabox.User) *UserResponse {
+func NewUserResponse(user *domain.User) *UserResponse {
 	resp := &UserResponse{User: user}
 	return resp
 }
 
 // NewUserListResponse creates a new renderer list of reponses
-func NewUserListResponse(users []*lukabox.User) []render.Renderer {
+func NewUserListResponse(users []*domain.User) []render.Renderer {
 	list := []render.Renderer{}
 	for _, user := range users {
 		list = append(list, NewUserResponse(user))
@@ -77,7 +77,7 @@ func NewUserListResponse(users []*lukabox.User) []render.Renderer {
 
 // Users lists the users using the RenderList function
 func Users(w http.ResponseWriter, r *http.Request) {
-	var users []*lukabox.User
+	var users []*domain.User
 	var err error
 
 	if users, err = db.GetUsers(); err != nil {
@@ -94,7 +94,7 @@ func Users(w http.ResponseWriter, r *http.Request) {
 
 //UserRequest a reuqest to create a user
 type UserRequest struct {
-	*lukabox.User
+	*domain.User
 }
 
 // Bind post-processing after decode
@@ -120,7 +120,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 // UpdateUser updates the user
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value("user").(*lukabox.User)
+	user := r.Context().Value("user").(*domain.User)
 
 	data := &UserRequest{User: user}
 	if err := render.Bind(r, data); err != nil {
