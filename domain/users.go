@@ -9,3 +9,12 @@ type User struct {
 	LastName  string `json:"lastName"`
 	Archived  bool   `json:"archived"`
 }
+
+//UserService database services
+type UserService interface {
+	UserByID(id int) (*User, error)
+	UserByEmail(email string) (*User, error)
+	Users() ([]*User, error)
+	CreateUser(user *User) error
+	UpdateUser(id int, user *User) error
+}

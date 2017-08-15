@@ -6,18 +6,23 @@ import (
 
 	"github.com/go-chi/jwtauth"
 	"github.com/go-chi/render"
-	"github.com/jacsmith21/lukabox/core/db"
+	"github.com/jacsmith21/lukabox/domain"
 	log "github.com/jacsmith21/lukabox/ext/logrus"
 )
 
-//UserCredentials a reguler user credentials
-type UserCredentials struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+//AuthenticationAPI the services used
+type AuthenticationAPI struct {
+	AuthenticationService domain.AuthenticationService
+	UserService           domain.UserService
+}
+
+//CredentialsRequest a request with credentials
+type CredentialsRequest struct {
+	Credentials *domain.Credentials
 }
 
 //Bind post-processing after decode
-func (uc *UserCredentials) Bind(r *http.Request) error {
+func (c CredentialsRequest) Bind(r *http.Request) error {
 	return nil
 }
 
@@ -48,22 +53,24 @@ func NewTokenResponse(token *Token) *TokenResponse {
 }
 
 //Login login handler
-func Login(w http.ResponseWriter, r *http.Request) {
+func (aa *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 	log.WithField("method", "Login")
-	credentials := &UserCredentials{}
-	if err := render.Bind(r, credentials); err != nil {
+
+	c := &CredentialsRequest{}
+	if err := render.Bind(r, c); err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
 		return
 	}
-	authenticated := db.AuthenticateUser(credentials.Email, credentials.Password)
-	if !authenticated {
+
+	a := aa.AuthenticationService.Authenticate(c.Credentials.Email, c.Credentials.Password)
+	if !a {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Println("Error logging in")
 		fmt.Fprint(w, "Invalid credentials")
 		return
 	}
 	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
-	user, _ := db.GetUserByEmail(credentials.Email)
+	user, _ := aa.UserService.UserByEmail(c.Credentials.Email)
 	claims := jwtauth.Claims{"id": user.ID}
 	log.WithField("id", user.ID).Debug("adding id to claims")
 	_, tokenString, _ := tokenAuth.Encode(claims)

@@ -7,12 +7,16 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
-	"github.com/jacsmith21/lukabox/core/db"
 	"github.com/jacsmith21/lukabox/domain"
 )
 
+//UserAPI the services used
+type UserAPI struct {
+	UserService domain.UserService
+}
+
 // UserCtx is used to create a user context by id
-func UserCtx(next http.Handler) http.Handler {
+func (s *UserAPI) UserCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var user *domain.User
 		var err error
@@ -30,7 +34,7 @@ func UserCtx(next http.Handler) http.Handler {
 			return
 		}
 
-		user, err = db.GetUser(id)
+		user, err = s.UserService.UserByID(id)
 		if err != nil {
 			render.Render(w, r, ErrNotFound)
 			return
@@ -41,8 +45,8 @@ func UserCtx(next http.Handler) http.Handler {
 	})
 }
 
-// GetUser gets a user by id
-func GetUser(w http.ResponseWriter, r *http.Request) {
+// UserByID gets a user by id
+func (s *UserAPI) UserByID(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value("user").(*domain.User)
 	if err := render.Render(w, r, NewUserResponse(user)); err != nil {
 		render.Render(w, r, ErrRender(err))
@@ -76,11 +80,11 @@ func NewUserListResponse(users []*domain.User) []render.Renderer {
 }
 
 // Users lists the users using the RenderList function
-func Users(w http.ResponseWriter, r *http.Request) {
+func (s *UserAPI) Users(w http.ResponseWriter, r *http.Request) {
 	var users []*domain.User
 	var err error
 
-	if users, err = db.GetUsers(); err != nil {
+	if users, err = s.UserService.Users(); err != nil {
 		render.Render(w, r, ErrRender(err))
 		return
 	}
@@ -104,7 +108,7 @@ func (u *UserRequest) Bind(r *http.Request) error {
 }
 
 //CreateUser creates a user
-func CreateUser(w http.ResponseWriter, r *http.Request) {
+func (s *UserAPI) CreateUser(w http.ResponseWriter, r *http.Request) {
 	data := &UserRequest{}
 	err := render.Bind(r, data)
 	if err != nil {
@@ -112,14 +116,14 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := data.User
-	db.CreateUser(user)
+	s.UserService.CreateUser(user)
 
 	render.Status(r, http.StatusCreated)
 	render.Render(w, r, NewUserResponse(user))
 }
 
 // UpdateUser updates the user
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (s *UserAPI) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value("user").(*domain.User)
 
 	data := &UserRequest{User: user}
@@ -129,7 +133,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user = data.User
-	db.UpdateUser(user.ID, user)
+	s.UserService.UpdateUser(user.ID, user)
 
 	render.Render(w, r, NewUserResponse(user))
 }

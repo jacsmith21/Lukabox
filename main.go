@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -9,7 +8,8 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/jwtauth"
 	"github.com/go-chi/render"
-	"github.com/jacsmith21/lukabox/core/api"
+	"github.com/jacsmith21/lukabox/api"
+	"github.com/jacsmith21/lukabox/db"
 )
 
 var tokenAuth *jwtauth.JwtAuth
@@ -17,9 +17,23 @@ var tokenAuth *jwtauth.JwtAuth
 func main() {
 	r := chi.NewRouter()
 
+	//Creating token with secret string
 	tokenAuth = jwtauth.New("HS256", []byte("secret"), nil)
 
-	// A good base middleware stack
+	// Creating services
+	var userService = db.UserService{}
+	var authenticationService = db.AuthenticationService{}
+
+	// Creating apis
+	var userAPI api.UserAPI
+	var authenticationAPI api.AuthenticationAPI
+
+	// Adding services to apis
+	userAPI.UserService = &userService
+	authenticationAPI.AuthenticationService = &authenticationService
+	authenticationAPI.UserService = &userService
+
+	// The middleware
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -38,25 +52,22 @@ func main() {
 	})
 
 	r.Post("/singup", api.SignUp)
-	r.Post("/login", api.Login)
+	r.Post("/login", authenticationAPI.Login)
 
 	r.Route("/users", func(r chi.Router) {
-		r.Get("/", api.Users)
-		r.Put("/", api.CreateUser)
+		r.Get("/", userAPI.Users)
+		r.Put("/", userAPI.CreateUser)
 
 		r.Route("/{id}", func(r chi.Router) {
-			r.Use(api.UserCtx)
-			r.Get("/", api.GetUser)
-			r.Post("/", api.UpdateUser)
-		})
-	})
+			r.Use(userAPI.UserCtx)
+			r.Get("/", userAPI.UserByID)
+			r.Post("/", userAPI.UpdateUser)
 
-	r.Route("/pills", func(r chi.Router) {
-		r.Use(jwtauth.Verifier(tokenAuth))
-		r.Use(jwtauth.Authenticator)
-		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			_, claims, _ := jwtauth.FromContext(r.Context())
-			w.Write([]byte(fmt.Sprintf("welcome :) it worked! id: %v", claims["id"])))
+			r.Route("/pills", func(r chi.Router) {
+				r.Use(jwtauth.Verifier(tokenAuth))
+				r.Use(jwtauth.Authenticator)
+				r.Get("/", api.PillsByUser)
+			})
 		})
 	})
 
