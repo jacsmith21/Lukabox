@@ -22,14 +22,17 @@ func main() {
 
 	// Creating services
 	var userService = db.UserService{}
+	var pillService = db.PillService{}
 	var authenticationService = db.AuthenticationService{}
 
 	// Creating apis
 	var userAPI api.UserAPI
+	var pillAPI api.PillAPI
 	var authenticationAPI api.AuthenticationAPI
 
 	// Adding services to apis
 	userAPI.UserService = &userService
+	pillAPI.PillService = &pillService
 	authenticationAPI.AuthenticationService = &authenticationService
 	authenticationAPI.UserService = &userService
 
@@ -66,7 +69,7 @@ func main() {
 			r.Route("/pills", func(r chi.Router) {
 				r.Use(jwtauth.Verifier(tokenAuth))
 				r.Use(jwtauth.Authenticator)
-				r.Get("/", api.PillsByUser)
+				r.Get("/", pillAPI.Pills)
 			})
 		})
 	})

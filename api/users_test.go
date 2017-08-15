@@ -5,11 +5,46 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-chi/chi"
 	"github.com/jacsmith21/lukabox/domain"
 	"github.com/jacsmith21/lukabox/mock"
 )
 
-func TestListUsers(t *testing.T) {
+func TestUserCtx(t *testing.T) {
+	var us mock.UserService
+	var ua UserAPI
+	ua.UserService = &us
+
+	us.UserByIDFn = func(id int) (*domain.User, error) {
+		if id != 1 {
+			t.Fatal("expected id to be 1")
+		}
+		user := domain.User{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
+		return &user, nil
+	}
+
+	req, err := http.NewRequest("GET", "/users/1", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := httptest.NewRecorder()
+
+	r := chi.NewRouter()
+	r.Route("/users/{id}", func(r chi.Router) {
+		r.Use(ua.UserCtx)
+		r.Get("/", func(w http.ResponseWriter, request *http.Request) {
+			w.Write([]byte("This is a test!"))
+		})
+	})
+	r.ServeHTTP(w, req)
+
+	if status := w.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+}
+
+func TestUsers(t *testing.T) {
 	var us mock.UserService
 	var ua UserAPI
 	ua.UserService = &us
@@ -28,14 +63,13 @@ func TestListUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rr := httptest.NewRecorder()
+	w := httptest.NewRecorder()
 	handler := http.HandlerFunc(ua.Users)
 
-	handler.ServeHTTP(rr, req)
+	handler.ServeHTTP(w, req)
 
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
+	if status := w.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
 	if !us.UsersInvoked {

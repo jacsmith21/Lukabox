@@ -8,5 +8,5 @@ type Credentials struct {
 
 //AuthenticationService credentials services
 type AuthenticationService interface {
-	Authenticate(email string, password string) bool
+	Authenticate(email string, password string) (bool, error)
 }

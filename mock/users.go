@@ -2,7 +2,7 @@ package mock
 
 import "github.com/jacsmith21/lukabox/domain"
 
-// UserService represents a mock implementation of myapp.UserService.
+// UserService represents a mock implementation of domain.UserService.
 type UserService struct {
 	UserByIDFn      func(id int) (*domain.User, error)
 	UserByIDInvoked bool
@@ -18,9 +18,6 @@ type UserService struct {
 
 	UpdateUserFn      func(id int, user *domain.User) error
 	UpdateUserInvoked bool
-
-	AuthenticateUserFn      func(email string, password string) (bool, error)
-	AuthenticateUserInvoked bool
 }
 
 //UserByID invokes the mock implementation and marks the function as invoked.
