@@ -115,11 +115,12 @@ func (s *UserAPI) CreateUser(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, ErrInvalidRequest(err))
 		return
 	}
+
 	user := data.User
 	s.UserService.CreateUser(user)
 
 	render.Status(r, http.StatusCreated)
-	render.Render(w, r, NewUserResponse(user))
+	render.Render(w, r, NewUserResponse(user)) //TODO change this
 }
 
 // UpdateUser updates the user
