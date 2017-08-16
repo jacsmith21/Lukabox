@@ -31,6 +31,7 @@ func (s *PillAPI) Pills(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// NewPillListResponse create new pill list response
 func NewPillListResponse(pills []*domain.Pill) []render.Renderer {
 	list := []render.Renderer{}
 	for _, pill := range pills {
@@ -39,15 +40,18 @@ func NewPillListResponse(pills []*domain.Pill) []render.Renderer {
 	return list
 }
 
+// NewPillResponse create new response
 func NewPillResponse(pill *domain.Pill) render.Renderer {
 	resp := &PillResponse{Pill: pill}
 	return resp
 }
 
+// PillResponse respose structure
 type PillResponse struct {
 	Pill *domain.Pill
 }
 
+// Render implementation
 func (rd *PillResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }

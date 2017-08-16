@@ -16,7 +16,7 @@ import (
 	"github.com/jacsmith21/lukabox/mock"
 )
 
-func implementMethods(us *mock.UserService) {
+func implUserServiceMethods(us *mock.UserService) {
 	us.UserByIDFn = func(id int) (*domain.User, error) {
 		if id != 1 {
 			return nil, errors.New("expected id to be 1")
@@ -91,8 +91,7 @@ func TestUserCtx(t *testing.T) {
 	var us mock.UserService
 	var ua UserAPI
 	ua.UserService = &us
-
-	implementMethods(&us)
+	implUserServiceMethods(&us)
 
 	req, err := http.NewRequest("GET", "/users/1", nil)
 	if err != nil {
@@ -122,8 +121,7 @@ func TestUsersByID(t *testing.T) {
 	var us mock.UserService
 	var ua UserAPI
 	ua.UserService = &us
-
-	implementMethods(&us)
+	implUserServiceMethods(&us)
 
 	req, err := http.NewRequest("GET", "/users/1", nil)
 	if err != nil {
@@ -156,8 +154,7 @@ func TestUsers(t *testing.T) {
 	var us mock.UserService
 	var ua UserAPI
 	ua.UserService = &us
-
-	implementMethods(&us)
+	implUserServiceMethods(&us)
 
 	req, err := http.NewRequest("GET", "/users", nil)
 	if err != nil {
@@ -182,8 +179,7 @@ func TestCreateUser(t *testing.T) {
 	var us mock.UserService
 	var ua UserAPI
 	ua.UserService = &us
-
-	implementMethods(&us)
+	implUserServiceMethods(&us)
 
 	user := domain.User{Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith"}
 
@@ -218,8 +214,7 @@ func TestUpdateUser(t *testing.T) {
 	var us mock.UserService
 	var ua UserAPI
 	ua.UserService = &us
-
-	implementMethods(&us)
+	implUserServiceMethods(&us)
 
 	user := domain.User{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
 
