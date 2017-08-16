@@ -18,11 +18,11 @@ type AuthenticationAPI struct {
 
 //CredentialsRequest a request with credentials
 type CredentialsRequest struct {
-	Credentials *domain.Credentials
+	*domain.Credentials
 }
 
 //Bind post-processing after decode
-func (c CredentialsRequest) Bind(r *http.Request) error {
+func (c *CredentialsRequest) Bind(r *http.Request) error {
 	return nil
 }
 
@@ -54,7 +54,7 @@ func NewTokenResponse(token *Token) *TokenResponse {
 
 //Login login handler
 func (aa *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
-	log.WithField("method", "Login")
+	log.WithField("method", "Login").Info("starting")
 	var authenticated bool
 	var err error
 
@@ -64,12 +64,15 @@ func (aa *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.WithField("Credentials", c.Credentials).Debug("credentials")
+
 	authenticated, err = aa.AuthenticationService.Authenticate(c.Credentials.Email, c.Credentials.Password)
 	if err != nil {
 		render.Render(w, r, ErrRender(err))
 		return
 	}
 
+	log.WithField("authenticated", authenticated).Debug("authentication complete")
 	if !authenticated {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Println("Error logging in")
@@ -77,6 +80,7 @@ func (aa *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Debug("Creating Token")
 	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
 	user, _ := aa.UserService.UserByEmail(c.Credentials.Email)
 	claims := jwtauth.Claims{"id": user.ID}

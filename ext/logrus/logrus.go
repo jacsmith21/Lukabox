@@ -1,32 +1,47 @@
 package logrus
 
-import logger "github.com/Sirupsen/logrus"
+import (
+	"os"
+
+	log "github.com/Sirupsen/logrus"
+)
 
 func init() {
-	logger.SetLevel(logger.DebugLevel)
+	log.Info("logrus init")
+
+	log.SetLevel(log.DebugLevel)
+
+	_, err := os.OpenFile("logrus.log", os.O_CREATE|os.O_WRONLY, 0666)
+	if err == nil {
+		//log.SetOutput(file)
+	} else {
+		//log.Info("failed to log to file, using default")
+	}
+
+	log.Info("logrus init ending")
 }
 
 //Info Info wrapper method
 func Info(args ...interface{}) {
-	logger.Info(args...)
+	log.Info(args...)
 }
 
 //Debug Debug wrapper method
 func Debug(args ...interface{}) {
-	logger.Debug(args...)
+	log.Debug(args...)
 }
 
 //Fatal Fatal wrapper method
 func Fatal(args ...interface{}) {
-	logger.Fatal(args...)
+	log.Fatal(args...)
 }
 
 //WithField WithField wrapper method
-func WithField(key string, args interface{}) *logger.Entry {
-	return logger.WithField(key, args)
+func WithField(key string, args interface{}) *log.Entry {
+	return log.WithField(key, args)
 }
 
 //WithFields WithFields wrapper method
-func WithFields(fields logger.Fields) *logger.Entry {
-	return logger.WithFields(fields)
+func WithFields(fields log.Fields) *log.Entry {
+	return log.WithFields(fields)
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	"github.com/jacsmith21/lukabox/domain"
+	log "github.com/jacsmith21/lukabox/ext/logrus"
 )
 
 //UserAPI the services used
@@ -47,6 +48,7 @@ func (s *UserAPI) UserCtx(next http.Handler) http.Handler {
 
 // UserByID gets a user by id
 func (s *UserAPI) UserByID(w http.ResponseWriter, r *http.Request) {
+	log.WithField("method", "UserByID").Info("starting")
 	user := r.Context().Value("user").(*domain.User)
 	if err := render.Render(w, r, NewUserResponse(user)); err != nil {
 		render.Render(w, r, ErrRender(err))
