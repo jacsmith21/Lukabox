@@ -18,7 +18,6 @@ func (s *PillAPI) Pills(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var pills []*domain.Pill
 
-	//_, claims, _ := jwtauth.FromContext(r.Context())
 	user := r.Context().Value("user").(*domain.User)
 
 	if pills, err = s.PillService.Pills(user.ID); err != nil {

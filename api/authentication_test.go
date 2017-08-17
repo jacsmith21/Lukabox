@@ -26,9 +26,12 @@ func implAuthenticationServiceMehods(as *mock.AuthenticationService) {
 
 		return true, nil
 	}
+	as.EmailAvailableFn = func(email string) (bool, error) {
+		return email == "jacob.smith@unb.ca", nil
+	}
 }
 
-func TestValidator(t *testing.T) {
+func TestRequestValidator(t *testing.T) {
 	var us mock.UserService
 	var aa AuthenticationAPI
 	var ua UserAPI
@@ -49,7 +52,7 @@ func TestValidator(t *testing.T) {
 	r.Route("/users/{id}", func(r chi.Router) {
 		r.Use(ua.UserCtx)
 		r.Use(jwtauth.Verifier(tokenAuth))
-		r.Use(aa.Validator)
+		r.Use(aa.RequestValidator)
 		r.Get("/", func(w http.ResponseWriter, request *http.Request) {
 			w.Write([]byte("This is a test!"))
 		})
@@ -58,6 +61,49 @@ func TestValidator(t *testing.T) {
 
 	if status := w.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+}
+
+func TestSignUpValidator(t *testing.T) {
+	var us mock.UserService
+	var as mock.AuthenticationService
+	var aa AuthenticationAPI
+	var ua UserAPI
+	ua.UserService = &us
+	aa.AuthenticationService = &as
+	implUserServiceMethods(&us)
+	implAuthenticationServiceMehods(&as)
+
+	user := domain.User{Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith"}
+
+	var m []byte
+	var err error
+	if m, err = json.Marshal(user); err != nil {
+		t.Fatal("error marshaling test user")
+	}
+
+	req, err := http.NewRequest("PUT", "/users", bytes.NewReader(m))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r := chi.NewRouter()
+	r.Route("/users", func(r chi.Router) {
+		r.Use(ua.UserRequestCtx)
+		r.Use(aa.SignUpValidator)
+		r.Put("/", ua.CreateUser)
+	})
+	r.ServeHTTP(w, req)
+
+	if status := w.Code; status != http.StatusCreated {
+		t.Errorf("handler returned wrong status code: got %v want %v\nbody: %v", status, http.StatusCreated, w.Body)
+	}
+
+	if !as.EmailAvailableInvoked {
+		t.Fatal("expected Authenticate to be invoked")
 	}
 }
 
@@ -95,6 +141,6 @@ func TestLogin(t *testing.T) {
 	}
 
 	if !as.AuthenticateInvoked {
-		t.Fatal("expected CreateUser to be invoked")
+		t.Fatal("expected Authenticate to be invoked")
 	}
 }

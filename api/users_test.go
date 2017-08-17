@@ -118,6 +118,42 @@ func TestUserCtx(t *testing.T) {
 	}
 }
 
+func TestUserRequestCtx(t *testing.T) {
+	var us mock.UserService
+	var ua UserAPI
+	ua.UserService = &us
+	implUserServiceMethods(&us)
+
+	user := domain.User{Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith"}
+
+	var m []byte
+	var err error
+	if m, err = json.Marshal(user); err != nil {
+		t.Fatal("error marshaling test user")
+	}
+
+	req, err := http.NewRequest("PUT", "/users", bytes.NewReader(m))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	r := chi.NewRouter()
+	r.Route("/users", func(r chi.Router) {
+		r.Use(ua.UserRequestCtx)
+		r.Put("/", func(w http.ResponseWriter, request *http.Request) {
+			w.Write([]byte("This is a test!"))
+		})
+	})
+	r.ServeHTTP(w, req)
+
+	if status := w.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v\nbody: %v", status, http.StatusOK, w.Body)
+	}
+}
+
 func TestUsersByID(t *testing.T) {
 	var us mock.UserService
 	var ua UserAPI
@@ -198,9 +234,13 @@ func TestCreateUser(t *testing.T) {
 	req.Header.Add("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
-	handler := http.HandlerFunc(ua.CreateUser)
 
-	handler.ServeHTTP(w, req)
+	r := chi.NewRouter()
+	r.Route("/users", func(r chi.Router) {
+		r.Use(ua.UserRequestCtx)
+		r.Put("/", ua.CreateUser)
+	})
+	r.ServeHTTP(w, req)
 
 	if status := w.Code; status != http.StatusCreated {
 		t.Errorf("handler returned wrong status code: got %v want %v.\nBody: %v", status, http.StatusOK, w.Body)

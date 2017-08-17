@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/jwtauth"
 	"github.com/go-chi/render"
+	"github.com/go-errors/errors"
 	"github.com/jacsmith21/lukabox/domain"
 	log "github.com/jacsmith21/lukabox/ext/logrus"
 	"github.com/jacsmith21/lukabox/structure"
@@ -17,8 +18,8 @@ type AuthenticationAPI struct {
 	UserService           domain.UserService
 }
 
-// Validator validates the request ie. checks whether the user is allowed to make this request
-func (a *AuthenticationAPI) Validator(next http.Handler) http.Handler {
+// RequestValidator validates the request ie. checks whether the user is allowed to make this request
+func (a *AuthenticationAPI) RequestValidator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, claims, err := jwtauth.FromContext(r.Context())
 		if err != nil {
@@ -40,9 +41,23 @@ func (a *AuthenticationAPI) Validator(next http.Handler) http.Handler {
 	})
 }
 
-//SignUp signup handler
-func (a *AuthenticationAPI) SignUp(w http.ResponseWriter, r *http.Request) {
+//SignUpValidator signup handler
+func (a *AuthenticationAPI) SignUpValidator(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := r.Context().Value("user").(*domain.User)
+		email := user.Email
 
+		available, err := a.AuthenticationService.EmailAvailable(email)
+		if err != nil {
+			render.Render(w, r, ErrInvalidRequest(errors.New("email taken")))
+			return
+		}
+		if !available {
+			fmt.Fprint(w, a)
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 //Login login handler

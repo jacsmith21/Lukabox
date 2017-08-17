@@ -28,13 +28,13 @@ func main() {
 	// Creating apis
 	var userAPI api.UserAPI
 	var pillAPI api.PillAPI
-	var authenticationAPI api.AuthenticationAPI
+	var auth api.AuthenticationAPI
 
 	// Adding services to apis
 	userAPI.UserService = &userService
 	pillAPI.PillService = &pillService
-	authenticationAPI.AuthenticationService = &authenticationService
-	authenticationAPI.UserService = &userService
+	auth.AuthenticationService = &authenticationService
+	auth.UserService = &userService
 
 	// The middleware
 	r.Use(middleware.RequestID)
@@ -54,12 +54,11 @@ func main() {
 		panic("test")
 	})
 
-	r.Post("/singup", authenticationAPI.SignUp)
-	r.Post("/login", authenticationAPI.Login)
+	r.Post("/login", auth.Login)
 
 	r.Route("/users", func(r chi.Router) {
 		r.Get("/", userAPI.Users)
-		r.Put("/", userAPI.CreateUser)
+		r.With(userAPI.UserRequestCtx).With(auth.SignUpValidator).Put("/", userAPI.CreateUser)
 
 		r.Route("/{id}", func(r chi.Router) {
 			r.Use(userAPI.UserCtx)
@@ -68,7 +67,7 @@ func main() {
 
 			r.Route("/pills", func(r chi.Router) {
 				r.Use(jwtauth.Verifier(tokenAuth))
-				r.Use(authenticationAPI.Validator)
+				r.Use(auth.RequestValidator)
 				r.Get("/", pillAPI.Pills)
 			})
 		})

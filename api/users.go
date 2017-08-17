@@ -47,6 +47,22 @@ func (a *UserAPI) UserCtx(next http.Handler) http.Handler {
 	})
 }
 
+func (a *UserAPI) UserRequestCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		data := &structure.UserRequest{}
+
+		err := render.Bind(r, data)
+		if err != nil {
+			render.Render(w, r, ErrInvalidRequest(err))
+			return
+		}
+
+		user := data.User
+		ctx := context.WithValue(r.Context(), "user", user)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 // UserByID gets a user by id
 func (a *UserAPI) UserByID(w http.ResponseWriter, r *http.Request) {
 	log.WithField("method", "UserByID").Info("starting")
@@ -76,14 +92,8 @@ func (a *UserAPI) Users(w http.ResponseWriter, r *http.Request) {
 
 //CreateUser creates a user
 func (a *UserAPI) CreateUser(w http.ResponseWriter, r *http.Request) {
-	data := &structure.UserRequest{}
-	err := render.Bind(r, data)
-	if err != nil {
-		render.Render(w, r, ErrInvalidRequest(err))
-		return
-	}
+	user := r.Context().Value("user").(*domain.User)
 
-	user := data.User
 	a.UserService.CreateUser(user)
 
 	render.Status(r, http.StatusCreated)
