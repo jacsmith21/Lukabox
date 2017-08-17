@@ -54,7 +54,7 @@ func main() {
 		panic("test")
 	})
 
-	r.Post("/singup", api.SignUp)
+	r.Post("/singup", authenticationAPI.SignUp)
 	r.Post("/login", authenticationAPI.Login)
 
 	r.Route("/users", func(r chi.Router) {
@@ -68,7 +68,7 @@ func main() {
 
 			r.Route("/pills", func(r chi.Router) {
 				r.Use(jwtauth.Verifier(tokenAuth))
-				r.Use(jwtauth.Authenticator)
+				r.Use(authenticationAPI.Validator)
 				r.Get("/", pillAPI.Pills)
 			})
 		})

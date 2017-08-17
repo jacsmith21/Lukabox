@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-chi/chi"
+	"github.com/go-chi/jwtauth"
 	"github.com/jacsmith21/lukabox/domain"
 	"github.com/jacsmith21/lukabox/mock"
 )
@@ -23,6 +25,39 @@ func implAuthenticationServiceMehods(as *mock.AuthenticationService) {
 		}
 
 		return true, nil
+	}
+}
+
+func TestValidator(t *testing.T) {
+	var us mock.UserService
+	var aa AuthenticationAPI
+	var ua UserAPI
+	ua.UserService = &us
+	implUserServiceMethods(&us)
+
+	req, err := http.NewRequest("GET", "/users/1", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
+	req.Header.Add("Authorization", "BEARER eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MX0.tjVEMiS5O2yNzclwLdaZ-FuzrhyqOT7UwM9Hfc0ZQ8Q")
+
+	w := httptest.NewRecorder()
+
+	r := chi.NewRouter()
+	r.Route("/users/{id}", func(r chi.Router) {
+		r.Use(ua.UserCtx)
+		r.Use(jwtauth.Verifier(tokenAuth))
+		r.Use(aa.Validator)
+		r.Get("/", func(w http.ResponseWriter, request *http.Request) {
+			w.Write([]byte("This is a test!"))
+		})
+	})
+	r.ServeHTTP(w, req)
+
+	if status := w.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 }
 

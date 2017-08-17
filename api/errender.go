@@ -43,5 +43,8 @@ func ErrInvalidRequest(err error) render.Renderer {
 	}
 }
 
-// ErrNotFound is a simple response when a resource is not found
+// ErrNotFound 404 error
 var ErrNotFound = &ErrResponse{HTTPStatusCode: 404, StatusText: "Resource not found."}
+
+// ErrUnauthorized 401 error
+var ErrUnauthorized = &ErrResponse{HTTPStatusCode: 401, StatusText: "Unauthorized"}

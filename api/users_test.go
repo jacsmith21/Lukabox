@@ -97,6 +97,7 @@ func TestUserCtx(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	w := httptest.NewRecorder()
 
 	r := chi.NewRouter()

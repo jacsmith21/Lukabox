@@ -17,13 +17,36 @@ type AuthenticationAPI struct {
 	UserService           domain.UserService
 }
 
+// Validator validates the request ie. checks whether the user is allowed to make this request
+func (a *AuthenticationAPI) Validator(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, claims, err := jwtauth.FromContext(r.Context())
+		if err != nil {
+			render.Render(w, r, ErrRender(err))
+			return
+		}
+
+		user := r.Context().Value("user").(*domain.User)
+
+		log.WithField("user", user).Debug("user in validate")
+		log.WithField("claims", claims).Debug("claims in validate")
+
+		id := int(claims["id"].(float64))
+		if user.ID != id {
+			render.Render(w, r, ErrUnauthorized)
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 //SignUp signup handler
-func SignUp(w http.ResponseWriter, r *http.Request) {
+func (a *AuthenticationAPI) SignUp(w http.ResponseWriter, r *http.Request) {
 
 }
 
 //Login login handler
-func (aa *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
+func (a *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 	log.WithField("method", "Login").Info("starting")
 	var authenticated bool
 	var err error
@@ -36,7 +59,7 @@ func (aa *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 
 	log.WithField("Credentials", c.Credentials).Debug("credentials")
 
-	authenticated, err = aa.AuthenticationService.Authenticate(c.Credentials.Email, c.Credentials.Password)
+	authenticated, err = a.AuthenticationService.Authenticate(c.Credentials.Email, c.Credentials.Password)
 	if err != nil {
 		render.Render(w, r, ErrRender(err))
 		return
@@ -45,18 +68,17 @@ func (aa *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 	log.WithField("authenticated", authenticated).Debug("authentication complete")
 	if !authenticated {
 		w.WriteHeader(http.StatusForbidden)
-		fmt.Println("Error logging in")
 		fmt.Fprint(w, "Invalid credentials")
 		return
 	}
 
 	log.Debug("Creating Token")
 	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
-	user, _ := aa.UserService.UserByEmail(c.Credentials.Email)
+	user, _ := a.UserService.UserByEmail(c.Credentials.Email)
 	claims := jwtauth.Claims{"id": user.ID}
 	log.WithField("id", user.ID).Debug("adding id to claims")
 	_, tokenString, _ := tokenAuth.Encode(claims)
-	token := &domain.Token{tokenString}
+	token := &domain.Token{Token: tokenString}
 
 	if err := render.Render(w, r, structure.NewTokenResponse(token)); err != nil {
 		render.Render(w, r, ErrRender(err))
