@@ -1,8 +1,6 @@
 package logrus
 
 import (
-	"os"
-
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -11,12 +9,12 @@ func init() {
 
 	log.SetLevel(log.DebugLevel)
 
-	_, err := os.OpenFile("logrus.log", os.O_CREATE|os.O_WRONLY, 0666)
+	/*_, err := os.OpenFile("logrus.log", os.O_CREATE|os.O_WRONLY, 0666)
 	if err == nil {
-		//log.SetOutput(file)
+	  log.SetOutput(file)
 	} else {
-		//log.Info("failed to log to file, using default")
-	}
+	  log.Info("failed to log to file, using default")
+	}*/
 
 	log.Info("logrus init ending")
 }

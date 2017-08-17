@@ -16,3 +16,13 @@ func (s *AuthenticationService) Authenticate(email string, password string) (boo
 	}
 	return false, nil
 }
+
+// EmailAvailable checks email availability
+func (s *AuthenticationService) EmailAvailable(email string) (bool, error) {
+	for _, u := range users {
+		if u.Email == email {
+			return false, nil
+		}
+	}
+	return true, nil
+}

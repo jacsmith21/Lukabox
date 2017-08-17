@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/render"
 	"github.com/jacsmith21/lukabox/domain"
 	log "github.com/jacsmith21/lukabox/ext/logrus"
+	"github.com/jacsmith21/lukabox/structure"
 )
 
 //AuthenticationAPI the services used
@@ -16,40 +17,9 @@ type AuthenticationAPI struct {
 	UserService           domain.UserService
 }
 
-//CredentialsRequest a request with credentials
-type CredentialsRequest struct {
-	*domain.Credentials
-}
-
-//Bind post-processing after decode
-func (c *CredentialsRequest) Bind(r *http.Request) error {
-	return nil
-}
-
 //SignUp signup handler
 func SignUp(w http.ResponseWriter, r *http.Request) {
 
-}
-
-//Token jwt token
-type Token struct {
-	Token string `json:"token"`
-}
-
-//TokenResponse a token response
-type TokenResponse struct {
-	*Token
-}
-
-//Render pre-processing before marshelling
-func (tr *TokenResponse) Render(w http.ResponseWriter, r *http.Request) error {
-	return nil
-}
-
-//NewTokenResponse creates a new token response
-func NewTokenResponse(token *Token) *TokenResponse {
-	resp := &TokenResponse{Token: token}
-	return resp
 }
 
 //Login login handler
@@ -58,7 +28,7 @@ func (aa *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 	var authenticated bool
 	var err error
 
-	c := &CredentialsRequest{}
+	c := &structure.CredentialsRequest{}
 	if err = render.Bind(r, c); err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
 		return
@@ -86,9 +56,9 @@ func (aa *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 	claims := jwtauth.Claims{"id": user.ID}
 	log.WithField("id", user.ID).Debug("adding id to claims")
 	_, tokenString, _ := tokenAuth.Encode(claims)
-	token := &Token{tokenString}
+	token := &domain.Token{tokenString}
 
-	if err := render.Render(w, r, NewTokenResponse(token)); err != nil {
+	if err := render.Render(w, r, structure.NewTokenResponse(token)); err != nil {
 		render.Render(w, r, ErrRender(err))
 		return
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/go-chi/jwtauth"
 	"github.com/go-chi/render"
 	"github.com/jacsmith21/lukabox/api"
-	"github.com/jacsmith21/lukabox/db"
+	"github.com/jacsmith21/lukabox/ext/db"
 )
 
 var tokenAuth *jwtauth.JwtAuth

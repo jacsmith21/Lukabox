@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/render"
 	"github.com/jacsmith21/lukabox/domain"
+	"github.com/jacsmith21/lukabox/structure"
 )
 
 //PillAPI the services used
@@ -25,33 +26,8 @@ func (s *PillAPI) Pills(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = render.RenderList(w, r, NewPillListResponse(pills)); err != nil {
+	if err = render.RenderList(w, r, structure.NewPillListResponse(pills)); err != nil {
 		render.Render(w, r, ErrRender(err))
 		return
 	}
-}
-
-// NewPillListResponse create new pill list response
-func NewPillListResponse(pills []*domain.Pill) []render.Renderer {
-	list := []render.Renderer{}
-	for _, pill := range pills {
-		list = append(list, NewPillResponse(pill))
-	}
-	return list
-}
-
-// NewPillResponse create new response
-func NewPillResponse(pill *domain.Pill) render.Renderer {
-	resp := &PillResponse{Pill: pill}
-	return resp
-}
-
-// PillResponse respose structure
-type PillResponse struct {
-	Pill *domain.Pill
-}
-
-// Render implementation
-func (rd *PillResponse) Render(w http.ResponseWriter, r *http.Request) error {
-	return nil
 }
