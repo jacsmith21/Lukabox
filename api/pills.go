@@ -66,23 +66,28 @@ func (a *PillAPI) Pills(w http.ResponseWriter, r *http.Request) {
 
 // UpdatePill updates a pill
 func (a *PillAPI) UpdatePill(w http.ResponseWriter, r *http.Request) {
-	log.WithField("method", "UpdatePill").Info("starting")
+	log.WithField("method", "UpdatePill").Warn("starting")
 	user := r.Context().Value("user").(*domain.User)
 	pill := r.Context().Value("pill").(*domain.Pill)
 
 	if pill.UserID != user.ID {
-		err := errors.New("paramter pill user id should match the parameter user ID")
+		err := errors.New("parameter pill user id should match the parameter user ID")
 		render.Render(w, r, ErrBadRequest(err))
 	}
 
-	data := &stc.PillRequest{Pill: pill}
+	data := &stc.PillRequest{}
 	if err := render.Bind(r, data); err != nil {
 		render.Render(w, r, ErrBadRequest(err))
 	}
 
 	p := data.Pill
-	log.WithField("id", p.PillID).Debug("new pill id")
-	log.WithField("id", pill.PillID).Debug("parameter pill id")
+	if p.PillID == 0 {
+		p.PillID = pill.PillID
+	}
+	if p.UserID == 0 {
+		p.UserID = pill.UserID
+	}
+
 	if p.PillID != pill.PillID {
 		err := errors.New("updated pill id must match the parameter pill id")
 		render.Render(w, r, ErrBadRequest(err))

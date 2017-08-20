@@ -135,7 +135,10 @@ func TestPills(t *testing.T) {
 
 var updatePillTests = []test{
 	{"/users/1/pills/1", http.StatusOK, "", &domain.Pill{PillID: 1, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{t}, Archived: false}},
-	{"/users/1/pills/2", http.StatusOK, "", &domain.Pill{PillID: 1, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{t}, Archived: false}},
+	{"/users/1/pills/2", http.StatusBadRequest, "{\"message\":\"updated pill id must match the parameter pill id\"}", &domain.Pill{PillID: 1, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{t}, Archived: false}},
+	{"/users/1/pills/1", http.StatusOK, "", &domain.Pill{UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{t}, Archived: false}},
+	{"/users/1/pills/1", http.StatusOK, "", &domain.Pill{PillID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{t}, Archived: false}},
+	{"/users/1/pills/1", http.StatusBadRequest, "{\"message\":\"updated pill user id does not match parameter user id\"}", &domain.Pill{PillID: 1, UserID: 2, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{t}, Archived: false}},
 }
 
 func TestUpdatePill(t *testing.T) {
