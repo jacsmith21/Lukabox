@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -9,7 +10,7 @@ import (
 	"github.com/go-chi/render"
 	"github.com/jacsmith21/lukabox/domain"
 	log "github.com/jacsmith21/lukabox/ext/logrus"
-	"github.com/jacsmith21/lukabox/structure"
+	"github.com/jacsmith21/lukabox/stc"
 )
 
 //UserAPI the services used
@@ -20,25 +21,24 @@ type UserAPI struct {
 // UserCtx is used to create a user context by id
 func (a *UserAPI) UserCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var user *domain.User
-		var err error
-		var id int
+		log.WithField("method", "UserCtx").Info("starting")
 
 		userID := chi.URLParam(r, "id")
 		if userID == "" {
-			render.Render(w, r, ErrInvalidRequest(err))
+			render.Render(w, r, ErrInvalidRequest(errors.New("paramter id should not be empty")))
 			return
 		}
+		log.WithField("id", userID).Debug("user id from paramter")
 
-		id, err = strconv.Atoi(userID)
+		id, err := strconv.Atoi(userID)
 		if err != nil {
 			render.Render(w, r, ErrInvalidRequest(err))
 			return
 		}
 
-		user, err = a.UserService.UserByID(id)
+		user, err := a.UserService.UserByID(id)
 		if err != nil {
-			render.Render(w, r, ErrNotFound)
+			render.Render(w, r, ErrNotFound(err))
 			return
 		}
 
@@ -47,9 +47,10 @@ func (a *UserAPI) UserCtx(next http.Handler) http.Handler {
 	})
 }
 
+// UserRequestCtx a user request context generator
 func (a *UserAPI) UserRequestCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		data := &structure.UserRequest{}
+		data := &stc.UserRequest{}
 
 		err := render.Bind(r, data)
 		if err != nil {
@@ -67,7 +68,7 @@ func (a *UserAPI) UserRequestCtx(next http.Handler) http.Handler {
 func (a *UserAPI) UserByID(w http.ResponseWriter, r *http.Request) {
 	log.WithField("method", "UserByID").Info("starting")
 	user := r.Context().Value("user").(*domain.User)
-	if err := render.Render(w, r, structure.NewUserResponse(user)); err != nil {
+	if err := render.Render(w, r, stc.NewUserResponse(user)); err != nil {
 		render.Render(w, r, ErrRender(err))
 		return
 	}
@@ -83,7 +84,7 @@ func (a *UserAPI) Users(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = render.RenderList(w, r, structure.NewUserListResponse(users))
+	err = render.RenderList(w, r, stc.NewUserListResponse(users))
 	if err != nil {
 		render.Render(w, r, ErrRender(err))
 		return
@@ -97,14 +98,14 @@ func (a *UserAPI) CreateUser(w http.ResponseWriter, r *http.Request) {
 	a.UserService.CreateUser(user)
 
 	render.Status(r, http.StatusCreated)
-	render.Render(w, r, structure.NewUserResponse(user)) //TODO change this
+	render.Render(w, r, stc.NewUserResponse(user)) //TODO change this
 }
 
 // UpdateUser updates the user
 func (a *UserAPI) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value("user").(*domain.User)
 
-	data := &structure.UserRequest{User: user}
+	data := &stc.UserRequest{User: user}
 	if err := render.Bind(r, data); err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
 		return
@@ -113,5 +114,5 @@ func (a *UserAPI) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	user = data.User
 	a.UserService.UpdateUser(user.ID, user)
 
-	render.Render(w, r, structure.NewUserResponse(user))
+	render.Render(w, r, stc.NewUserResponse(user))
 }

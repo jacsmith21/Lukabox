@@ -1,4 +1,4 @@
-package structure
+package stc
 
 import (
 	"net/http"
@@ -7,13 +7,24 @@ import (
 	"github.com/jacsmith21/lukabox/domain"
 )
 
-// PillResponse respose structure
+// PillResponse respose stc
 type PillResponse struct {
 	Pill *domain.Pill
 }
 
 // Render implementation
-func (rd *PillResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (pr *PillResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
+// PillRequest a pill request
+type PillRequest struct {
+	*domain.Pill
+}
+
+// Bind post-processing PillRequest
+func (pr *PillRequest) Bind(r *http.Request) error {
+	pr.Pill.Archived = false
 	return nil
 }
 

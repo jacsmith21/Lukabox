@@ -9,7 +9,7 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/jacsmith21/lukabox/domain"
 	log "github.com/jacsmith21/lukabox/ext/logrus"
-	"github.com/jacsmith21/lukabox/structure"
+	"github.com/jacsmith21/lukabox/stc"
 )
 
 //AuthenticationAPI the services used
@@ -66,7 +66,7 @@ func (a *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 	var authenticated bool
 	var err error
 
-	c := &structure.CredentialsRequest{}
+	c := &stc.CredentialsRequest{}
 	if err = render.Bind(r, c); err != nil {
 		render.Render(w, r, ErrInvalidRequest(err))
 		return
@@ -95,7 +95,7 @@ func (a *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 	_, tokenString, _ := tokenAuth.Encode(claims)
 	token := &domain.Token{Token: tokenString}
 
-	if err := render.Render(w, r, structure.NewTokenResponse(token)); err != nil {
+	if err := render.Render(w, r, stc.NewTokenResponse(token)); err != nil {
 		render.Render(w, r, ErrRender(err))
 		return
 	}

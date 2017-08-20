@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/render"
 )
 
-// ErrResponse error response structure
+// ErrResponse error response stc
 type ErrResponse struct {
 	Err            error `json:"-"` // low-level runtime error
 	HTTPStatusCode int   `json:"-"` // http response status code
@@ -43,8 +43,14 @@ func ErrInvalidRequest(err error) render.Renderer {
 	}
 }
 
-// ErrNotFound 404 error
-var ErrNotFound = &ErrResponse{HTTPStatusCode: 404, StatusText: "Resource not found."}
+func ErrNotFound(err error) render.Renderer {
+	return &ErrResponse{
+		Err:            err,
+		HTTPStatusCode: 401,
+		StatusText:     "Resource not found.",
+		ErrorText:      err.Error(),
+	}
+}
 
 // ErrUnauthorized 401 error
 var ErrUnauthorized = &ErrResponse{HTTPStatusCode: 401, StatusText: "Unauthorized"}

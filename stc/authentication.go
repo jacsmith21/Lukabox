@@ -1,4 +1,4 @@
-package structure
+package stc
 
 import (
 	"net/http"

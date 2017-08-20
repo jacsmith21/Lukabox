@@ -1,4 +1,4 @@
-package structure
+package stc
 
 import (
 	"net/http"
@@ -17,7 +17,7 @@ func (rd *UserResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-//UserRequest a reuqest to create a user
+//UserRequest a user request
 type UserRequest struct {
 	*domain.User
 }
