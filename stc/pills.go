@@ -9,7 +9,7 @@ import (
 
 // PillResponse respose stc
 type PillResponse struct {
-	Pill *domain.Pill
+	*domain.Pill
 }
 
 // Render implementation

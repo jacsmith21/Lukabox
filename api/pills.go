@@ -23,7 +23,7 @@ func (a *PillAPI) PillCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.WithField("method", "PillCtx").Info("starting")
 
-		pillID := chi.URLParam(r, "id")
+		pillID := chi.URLParam(r, "pillId")
 		log.WithField("id", pillID).Debug("pill id from parameter")
 
 		id, err := strconv.Atoi(pillID)
@@ -66,11 +66,12 @@ func (a *PillAPI) Pills(w http.ResponseWriter, r *http.Request) {
 
 // UpdatePill updates a pill
 func (a *PillAPI) UpdatePill(w http.ResponseWriter, r *http.Request) {
+	log.WithField("method", "UpdatePill").Info("starting")
 	user := r.Context().Value("user").(*domain.User)
 	pill := r.Context().Value("pill").(*domain.Pill)
 
 	if pill.UserID != user.ID {
-		err := errors.New("pill UserID should match the parameter user ID")
+		err := errors.New("paramter pill user id should match the parameter user ID")
 		render.Render(w, r, ErrBadRequest(err))
 	}
 
@@ -79,12 +80,18 @@ func (a *PillAPI) UpdatePill(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, ErrBadRequest(err))
 	}
 
-	pill = data.Pill
-	if pill.UserID != user.ID {
-		err := errors.New("pill UserID does not match parameter user ID")
+	p := data.Pill
+	log.WithField("id", p.PillID).Debug("new pill id")
+	log.WithField("id", pill.PillID).Debug("parameter pill id")
+	if p.PillID != pill.PillID {
+		err := errors.New("updated pill id must match the parameter pill id")
+		render.Render(w, r, ErrBadRequest(err))
+	}
+	if p.UserID != user.ID {
+		err := errors.New("updated pill user id does not match parameter user id")
 		render.Render(w, r, ErrBadRequest(err))
 	}
 
-	a.PillService.UpdatePill(pill.PillID, pill)
+	a.PillService.UpdatePill(p.PillID, p)
 
 }

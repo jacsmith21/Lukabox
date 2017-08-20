@@ -23,7 +23,7 @@ func (a *UserAPI) UserCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.WithField("method", "UserCtx").Info("starting")
 
-		userID := chi.URLParam(r, "id")
+		userID := chi.URLParam(r, "userId")
 		if userID == "" {
 			render.Render(w, r, ErrBadRequest(errors.New("paramter id should not be empty")))
 			return

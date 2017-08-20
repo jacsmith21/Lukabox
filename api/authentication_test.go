@@ -58,7 +58,7 @@ func TestRequestValidator(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	r := chi.NewRouter()
-	r.Route("/users/{id}", func(r chi.Router) {
+	r.Route("/users/{userId}", func(r chi.Router) {
 		r.Use(UApi.UserCtx)
 		r.Use(jwtauth.Verifier(tokenAuth))
 		r.Use(AApi.RequestValidator)

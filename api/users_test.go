@@ -27,11 +27,14 @@ func initUserAPI() {
 
 func implUserServiceMethods() {
 	USvc.UserByIDFn = func(id int) (*domain.User, error) {
-		if id != 1 {
-			return nil, errors.New("expected id to be 1")
+		if id == 1 {
+			user := domain.User{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
+			return &user, nil
+		} else if id == 2 {
+			user := domain.User{ID: 2, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
+			return &user, nil
 		}
-		user := domain.User{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
-		return &user, nil
+		return nil, nil
 	}
 
 	USvc.UserByEmailFn = func(email string) (*domain.User, error) {
@@ -45,8 +48,6 @@ func implUserServiceMethods() {
 	USvc.UsersFn = func() ([]*domain.User, error) {
 		users := []*domain.User{
 			{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false},
-			{ID: 2, Email: "j.a.smith@live.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false},
-			{ID: 3, Email: "jacobsmithunb@gmail.com", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false},
 		}
 		return users, nil
 	}
@@ -106,7 +107,7 @@ func TestUserCtx(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	r := chi.NewRouter()
-	r.Route("/users/{id}", func(r chi.Router) {
+	r.Route("/users/{userId}", func(r chi.Router) {
 		r.Use(UApi.UserCtx)
 		r.Get("/", func(w http.ResponseWriter, request *http.Request) {
 			w.Write([]byte("This is a test!"))
@@ -165,7 +166,7 @@ func TestUsersByID(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	r := chi.NewRouter()
-	r.Route("/users/{id}", func(r chi.Router) {
+	r.Route("/users/{userId}", func(r chi.Router) {
 		r.Use(UApi.UserCtx)
 		r.Get("/", UApi.UserByID)
 	})
@@ -264,7 +265,7 @@ func TestUpdateUser(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	r := chi.NewRouter()
-	r.Route("/users/{id}", func(r chi.Router) {
+	r.Route("/users/{userId}", func(r chi.Router) {
 		r.Use(UApi.UserCtx)
 		r.Post("/", UApi.UpdateUser)
 	})
