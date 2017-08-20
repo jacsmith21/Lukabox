@@ -24,21 +24,21 @@ func (a *PillAPI) PillCtx(next http.Handler) http.Handler {
 		log.WithField("method", "PillCtx").Info("starting")
 
 		pillID := chi.URLParam(r, "id")
-		if pillID == "" {
-			render.Render(w, r, ErrInvalidRequest(errors.New("pillID cannot be empty")))
-			return
-		}
 		log.WithField("id", pillID).Debug("pill id from parameter")
 
 		id, err := strconv.Atoi(pillID)
 		if err != nil {
-			render.Render(w, r, ErrInvalidRequest(err))
+			render.Render(w, r, ErrBadRequest(errors.New("unable to parse parameter id")))
 			return
 		}
 
 		pill, err := a.PillService.Pill(id)
 		if err != nil {
-			render.Render(w, r, ErrNotFound(err))
+			render.Render(w, r, ErrBadRequest(err))
+			return
+		}
+		if pill == nil {
+			render.Render(w, r, ErrNotFound(errors.New("pill not found")))
 			return
 		}
 
@@ -49,18 +49,17 @@ func (a *PillAPI) PillCtx(next http.Handler) http.Handler {
 
 // Pills returns the pills associated with the user
 func (a *PillAPI) Pills(w http.ResponseWriter, r *http.Request) {
-	var err error
-	var pills []*domain.Pill
 
 	user := r.Context().Value("user").(*domain.User)
 
-	if pills, err = a.PillService.Pills(user.ID); err != nil {
-		render.Render(w, r, ErrRender(err))
+	pills, err := a.PillService.Pills(user.ID)
+	if err != nil {
+		render.Render(w, r, ErrBadRequest(err))
 		return
 	}
 
-	if err = render.RenderList(w, r, stc.NewPillListResponse(pills)); err != nil {
-		render.Render(w, r, ErrRender(err))
+	if err := render.RenderList(w, r, stc.NewPillListResponse(pills)); err != nil {
+		render.Render(w, r, ErrBadRequest(err))
 		return
 	}
 }
@@ -72,18 +71,18 @@ func (a *PillAPI) UpdatePill(w http.ResponseWriter, r *http.Request) {
 
 	if pill.UserID != user.ID {
 		err := errors.New("pill UserID should match the parameter user ID")
-		render.Render(w, r, ErrInvalidRequest(err))
+		render.Render(w, r, ErrBadRequest(err))
 	}
 
 	data := &stc.PillRequest{Pill: pill}
 	if err := render.Bind(r, data); err != nil {
-		render.Render(w, r, ErrInvalidRequest(err))
+		render.Render(w, r, ErrBadRequest(err))
 	}
 
 	pill = data.Pill
 	if pill.UserID != user.ID {
 		err := errors.New("pill UserID does not match parameter user ID")
-		render.Render(w, r, ErrInvalidRequest(err))
+		render.Render(w, r, ErrBadRequest(err))
 	}
 
 	a.PillService.UpdatePill(pill.PillID, pill)

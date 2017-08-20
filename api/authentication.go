@@ -23,7 +23,7 @@ func (a *AuthenticationAPI) RequestValidator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, claims, err := jwtauth.FromContext(r.Context())
 		if err != nil {
-			render.Render(w, r, ErrRender(err))
+			render.Render(w, r, ErrBadRequest(err))
 			return
 		}
 
@@ -49,7 +49,7 @@ func (a *AuthenticationAPI) SignUpValidator(next http.Handler) http.Handler {
 
 		available, err := a.AuthenticationService.EmailAvailable(email)
 		if err != nil {
-			render.Render(w, r, ErrInvalidRequest(errors.New("email taken")))
+			render.Render(w, r, ErrBadRequest(errors.New("email taken")))
 			return
 		}
 		if !available {
@@ -68,7 +68,7 @@ func (a *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 
 	c := &stc.CredentialsRequest{}
 	if err = render.Bind(r, c); err != nil {
-		render.Render(w, r, ErrInvalidRequest(err))
+		render.Render(w, r, ErrBadRequest(err))
 		return
 	}
 
@@ -76,7 +76,7 @@ func (a *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 
 	authenticated, err = a.AuthenticationService.Authenticate(c.Credentials.Email, c.Credentials.Password)
 	if err != nil {
-		render.Render(w, r, ErrRender(err))
+		render.Render(w, r, ErrBadRequest(err))
 		return
 	}
 
@@ -96,7 +96,7 @@ func (a *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 	token := &domain.Token{Token: tokenString}
 
 	if err := render.Render(w, r, stc.NewTokenResponse(token)); err != nil {
-		render.Render(w, r, ErrRender(err))
+		render.Render(w, r, ErrBadRequest(err))
 		return
 	}
 }

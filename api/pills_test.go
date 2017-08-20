@@ -26,7 +26,7 @@ func initPillAPI() {
 func implPillServiceMethods() {
 	PSvc.PillsFn = func(id int) ([]*domain.Pill, error) {
 		if id != 1 {
-			return nil, errors.New("expected id to be 1")
+			return nil, nil
 		}
 
 		pills := []*domain.Pill{
@@ -37,7 +37,7 @@ func implPillServiceMethods() {
 	}
 	PSvc.PillFn = func(id int) (*domain.Pill, error) {
 		if id != 1 {
-			return nil, errors.New("expected id to be 1")
+			return nil, nil
 		}
 		pill := domain.Pill{PillID: 1, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{time.Now()}, Archived: false}
 		return &pill, nil
@@ -50,14 +50,21 @@ func implPillServiceMethods() {
 	}
 }
 
+type test struct {
+	url     string
+	status  int
+	body    string
+	invoked []*bool
+}
+
+var pillCtxTests = []test{
+	{"/pills/1", http.StatusOK, "This is a test!", nil},
+	{"/pills/2", http.StatusNotFound, "{\"message\":\"pill not found\"}\n", nil},
+	{"/pills/bad", http.StatusBadRequest, "{\"message\":\"unable to parse parameter id\"}\n", nil},
+}
+
 func TestPillCtx(t *testing.T) {
 	initPillAPI()
-
-	req, err := http.NewRequest("GET", "/pills/1", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	w := httptest.NewRecorder()
 
 	r := chi.NewRouter()
 	r.Route("/pills/{id}", func(r chi.Router) {
@@ -66,10 +73,28 @@ func TestPillCtx(t *testing.T) {
 			w.Write([]byte("This is a test!"))
 		})
 	})
-	r.ServeHTTP(w, req)
 
-	if status := w.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	for _, test := range pillCtxTests {
+		req, err := http.NewRequest("GET", test.url, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if status := w.Code; status != test.status {
+			t.Errorf("handler returned wrong status code: got %v want %v for %v", status, test.status, test.url)
+		}
+
+		if body := w.Body; body.String() != test.body {
+			t.Errorf("handler returned wrong body:\n%v\ninstead of:\n%v\nfor %v", body, test.body, test.url)
+		}
+
+		for _, invoke := range test.invoked {
+			if !*invoke {
+				t.Errorf("%v was not invoked", invoke)
+			}
+		}
 	}
 
 	if !PSvc.PillInvoked {

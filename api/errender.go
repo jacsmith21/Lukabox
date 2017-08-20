@@ -12,9 +12,7 @@ type ErrResponse struct {
 	Err            error `json:"-"` // low-level runtime error
 	HTTPStatusCode int   `json:"-"` // http response status code
 
-	StatusText string `json:"status"`          // user-level status message
-	AppCode    int64  `json:"code,omitempty"`  // application-specific error code
-	ErrorText  string `json:"error,omitempty"` // application-level error message, for debugging
+	Message string `json:"message,omitempty"` // application-level error message, for debugging
 }
 
 // Render pre-processing before the ErrResponse is marshalled
@@ -23,34 +21,23 @@ func (e *ErrResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-// ErrRender renders an error into an ErrResponse
-func ErrRender(err error) render.Renderer {
-	return &ErrResponse{
-		Err:            err,
-		HTTPStatusCode: 422,
-		StatusText:     "Error rendering response.",
-		ErrorText:      err.Error(),
-	}
-}
-
-// ErrInvalidRequest creates invalid request response
-func ErrInvalidRequest(err error) render.Renderer {
+// ErrBadRequest bad request response
+func ErrBadRequest(err error) render.Renderer {
 	return &ErrResponse{
 		Err:            err,
 		HTTPStatusCode: 400,
-		StatusText:     "Invalid request.",
-		ErrorText:      err.Error(),
+		Message:        err.Error(),
 	}
 }
 
+// ErrNotFound not found ErrBadRequest
 func ErrNotFound(err error) render.Renderer {
 	return &ErrResponse{
 		Err:            err,
-		HTTPStatusCode: 401,
-		StatusText:     "Resource not found.",
-		ErrorText:      err.Error(),
+		HTTPStatusCode: 404,
+		Message:        err.Error(),
 	}
 }
 
 // ErrUnauthorized 401 error
-var ErrUnauthorized = &ErrResponse{HTTPStatusCode: 401, StatusText: "Unauthorized"}
+var ErrUnauthorized = &ErrResponse{HTTPStatusCode: 401, Message: "Unauthorized"}

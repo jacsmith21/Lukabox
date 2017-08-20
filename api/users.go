@@ -25,14 +25,14 @@ func (a *UserAPI) UserCtx(next http.Handler) http.Handler {
 
 		userID := chi.URLParam(r, "id")
 		if userID == "" {
-			render.Render(w, r, ErrInvalidRequest(errors.New("paramter id should not be empty")))
+			render.Render(w, r, ErrBadRequest(errors.New("paramter id should not be empty")))
 			return
 		}
 		log.WithField("id", userID).Debug("user id from paramter")
 
 		id, err := strconv.Atoi(userID)
 		if err != nil {
-			render.Render(w, r, ErrInvalidRequest(err))
+			render.Render(w, r, ErrBadRequest(err))
 			return
 		}
 
@@ -54,7 +54,7 @@ func (a *UserAPI) UserRequestCtx(next http.Handler) http.Handler {
 
 		err := render.Bind(r, data)
 		if err != nil {
-			render.Render(w, r, ErrInvalidRequest(err))
+			render.Render(w, r, ErrBadRequest(err))
 			return
 		}
 
@@ -69,7 +69,7 @@ func (a *UserAPI) UserByID(w http.ResponseWriter, r *http.Request) {
 	log.WithField("method", "UserByID").Info("starting")
 	user := r.Context().Value("user").(*domain.User)
 	if err := render.Render(w, r, stc.NewUserResponse(user)); err != nil {
-		render.Render(w, r, ErrRender(err))
+		render.Render(w, r, ErrBadRequest(err))
 		return
 	}
 }
@@ -80,13 +80,13 @@ func (a *UserAPI) Users(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if users, err = a.UserService.Users(); err != nil {
-		render.Render(w, r, ErrRender(err))
+		render.Render(w, r, ErrBadRequest(err))
 		return
 	}
 
 	err = render.RenderList(w, r, stc.NewUserListResponse(users))
 	if err != nil {
-		render.Render(w, r, ErrRender(err))
+		render.Render(w, r, ErrBadRequest(err))
 		return
 	}
 }
@@ -107,7 +107,7 @@ func (a *UserAPI) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	data := &stc.UserRequest{User: user}
 	if err := render.Bind(r, data); err != nil {
-		render.Render(w, r, ErrInvalidRequest(err))
+		render.Render(w, r, ErrBadRequest(err))
 		return
 	}
 
