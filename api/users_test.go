@@ -16,8 +16,17 @@ import (
 	"github.com/jacsmith21/lukabox/mock"
 )
 
-func implUserServiceMethods(us *mock.UserService) {
-	us.UserByIDFn = func(id int) (*domain.User, error) {
+var USvc mock.UserService
+var UApi UserAPI
+
+func initUserAPI() {
+	USvc = mock.UserService{}
+	UApi.UserService = &USvc
+	implUserServiceMethods()
+}
+
+func implUserServiceMethods() {
+	USvc.UserByIDFn = func(id int) (*domain.User, error) {
 		if id != 1 {
 			return nil, errors.New("expected id to be 1")
 		}
@@ -25,7 +34,7 @@ func implUserServiceMethods(us *mock.UserService) {
 		return &user, nil
 	}
 
-	us.UserByEmailFn = func(email string) (*domain.User, error) {
+	USvc.UserByEmailFn = func(email string) (*domain.User, error) {
 		if email != "jacob.smith@unb.ca" {
 			return nil, errors.New("expected email to be jacob.smith@unb.ca")
 		}
@@ -33,7 +42,7 @@ func implUserServiceMethods(us *mock.UserService) {
 		return &user, nil
 	}
 
-	us.UsersFn = func() ([]*domain.User, error) {
+	USvc.UsersFn = func() ([]*domain.User, error) {
 		users := []*domain.User{
 			{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false},
 			{ID: 2, Email: "j.a.smith@live.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false},
@@ -41,7 +50,7 @@ func implUserServiceMethods(us *mock.UserService) {
 		}
 		return users, nil
 	}
-	us.CreateUserFn = func(u1 *domain.User) error {
+	USvc.CreateUserFn = func(u1 *domain.User) error {
 		u2 := domain.User{Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith"}
 		if !reflect.DeepEqual(u1, u2) {
 			var err error
@@ -60,8 +69,7 @@ func implUserServiceMethods(us *mock.UserService) {
 		}
 		return nil
 	}
-
-	us.UpdateUserFn = func(id int, u1 *domain.User) error {
+	USvc.UpdateUserFn = func(id int, u1 *domain.User) error {
 		u2 := domain.User{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
 		if !reflect.DeepEqual(u1, u2) {
 			var err error
@@ -88,10 +96,7 @@ func implUserServiceMethods(us *mock.UserService) {
 }
 
 func TestUserCtx(t *testing.T) {
-	var us mock.UserService
-	var ua UserAPI
-	ua.UserService = &us
-	implUserServiceMethods(&us)
+	initUserAPI()
 
 	req, err := http.NewRequest("GET", "/users/1", nil)
 	if err != nil {
@@ -102,7 +107,7 @@ func TestUserCtx(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users/{id}", func(r chi.Router) {
-		r.Use(ua.UserCtx)
+		r.Use(UApi.UserCtx)
 		r.Get("/", func(w http.ResponseWriter, request *http.Request) {
 			w.Write([]byte("This is a test!"))
 		})
@@ -113,22 +118,18 @@ func TestUserCtx(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	if !us.UserByIDInvoked {
+	if !USvc.UserByIDInvoked {
 		t.Fatal("expected UsersByID to be invoked")
 	}
 }
 
 func TestUserRequestCtx(t *testing.T) {
-	var us mock.UserService
-	var ua UserAPI
-	ua.UserService = &us
-	implUserServiceMethods(&us)
+	initUserAPI()
 
 	user := domain.User{Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith"}
 
-	var m []byte
-	var err error
-	if m, err = json.Marshal(user); err != nil {
+	m, err := json.Marshal(user)
+	if err != nil {
 		t.Fatal("error marshaling test user")
 	}
 
@@ -142,7 +143,7 @@ func TestUserRequestCtx(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users", func(r chi.Router) {
-		r.Use(ua.UserRequestCtx)
+		r.Use(UApi.UserRequestCtx)
 		r.Put("/", func(w http.ResponseWriter, request *http.Request) {
 			w.Write([]byte("This is a test!"))
 		})
@@ -155,10 +156,7 @@ func TestUserRequestCtx(t *testing.T) {
 }
 
 func TestUsersByID(t *testing.T) {
-	var us mock.UserService
-	var ua UserAPI
-	ua.UserService = &us
-	implUserServiceMethods(&us)
+	initUserAPI()
 
 	req, err := http.NewRequest("GET", "/users/1", nil)
 	if err != nil {
@@ -168,8 +166,8 @@ func TestUsersByID(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users/{id}", func(r chi.Router) {
-		r.Use(ua.UserCtx)
-		r.Get("/", ua.UserByID)
+		r.Use(UApi.UserCtx)
+		r.Get("/", UApi.UserByID)
 	})
 	r.ServeHTTP(w, req)
 
@@ -182,16 +180,13 @@ func TestUsersByID(t *testing.T) {
 		t.Errorf("expected body to be: \n%s\nnot\n%s", expected, body)
 	}
 
-	if !us.UserByIDInvoked {
+	if !USvc.UserByIDInvoked {
 		t.Fatal("expected UserByID to be invoked")
 	}
 }
 
 func TestUsers(t *testing.T) {
-	var us mock.UserService
-	var ua UserAPI
-	ua.UserService = &us
-	implUserServiceMethods(&us)
+	initUserAPI()
 
 	req, err := http.NewRequest("GET", "/users", nil)
 	if err != nil {
@@ -199,7 +194,7 @@ func TestUsers(t *testing.T) {
 	}
 
 	w := httptest.NewRecorder()
-	handler := http.HandlerFunc(ua.Users)
+	handler := http.HandlerFunc(UApi.Users)
 
 	handler.ServeHTTP(w, req)
 
@@ -207,16 +202,13 @@ func TestUsers(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	if !us.UsersInvoked {
+	if !USvc.UsersInvoked {
 		t.Fatal("expected Users to be invoked")
 	}
 }
 
 func TestCreateUser(t *testing.T) {
-	var us mock.UserService
-	var ua UserAPI
-	ua.UserService = &us
-	implUserServiceMethods(&us)
+	initUserAPI()
 
 	user := domain.User{Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith"}
 
@@ -237,8 +229,8 @@ func TestCreateUser(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users", func(r chi.Router) {
-		r.Use(ua.UserRequestCtx)
-		r.Put("/", ua.CreateUser)
+		r.Use(UApi.UserRequestCtx)
+		r.Put("/", UApi.CreateUser)
 	})
 	r.ServeHTTP(w, req)
 
@@ -246,16 +238,13 @@ func TestCreateUser(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v.\nBody: %v", status, http.StatusOK, w.Body)
 	}
 
-	if !us.CreateUserInvoked {
+	if !USvc.CreateUserInvoked {
 		t.Fatal("expected CreateUser to be invoked")
 	}
 }
 
 func TestUpdateUser(t *testing.T) {
-	var us mock.UserService
-	var ua UserAPI
-	ua.UserService = &us
-	implUserServiceMethods(&us)
+	initUserAPI()
 
 	user := domain.User{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
 
@@ -276,8 +265,8 @@ func TestUpdateUser(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users/{id}", func(r chi.Router) {
-		r.Use(ua.UserCtx)
-		r.Post("/", ua.UpdateUser)
+		r.Use(UApi.UserCtx)
+		r.Post("/", UApi.UpdateUser)
 	})
 	r.ServeHTTP(w, req)
 
@@ -285,7 +274,7 @@ func TestUpdateUser(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	if !us.UserByIDInvoked {
+	if !USvc.UserByIDInvoked {
 		t.Fatal("expected UsersByID to be invoked")
 	}
 }

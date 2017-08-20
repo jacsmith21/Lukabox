@@ -14,8 +14,21 @@ import (
 	"github.com/jacsmith21/lukabox/mock"
 )
 
-func implAuthenticationServiceMehods(as *mock.AuthenticationService) {
-	as.AuthenticateFn = func(email string, password string) (bool, error) {
+var ASvc mock.AuthenticationService
+var AApi AuthenticationAPI
+
+func initAuthenticationAPI() {
+	ASvc = mock.AuthenticationService{}
+	AApi.AuthenticationService = &ASvc
+	implAuthenticationServiceMethods()
+
+	USvc = mock.UserService{}
+	AApi.UserService = &USvc
+	implUserServiceMethods()
+}
+
+func implAuthenticationServiceMethods() {
+	ASvc.AuthenticateFn = func(email string, password string) (bool, error) {
 		if email != "jacob.smith@unb.ca" {
 			return false, errors.New("expected different email")
 		}
@@ -26,17 +39,13 @@ func implAuthenticationServiceMehods(as *mock.AuthenticationService) {
 
 		return true, nil
 	}
-	as.EmailAvailableFn = func(email string) (bool, error) {
+	ASvc.EmailAvailableFn = func(email string) (bool, error) {
 		return email == "jacob.smith@unb.ca", nil
 	}
 }
 
 func TestRequestValidator(t *testing.T) {
-	var us mock.UserService
-	var aa AuthenticationAPI
-	var ua UserAPI
-	ua.UserService = &us
-	implUserServiceMethods(&us)
+	initUserAPI()
 
 	req, err := http.NewRequest("GET", "/users/1", nil)
 	if err != nil {
@@ -50,9 +59,9 @@ func TestRequestValidator(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users/{id}", func(r chi.Router) {
-		r.Use(ua.UserCtx)
+		r.Use(UApi.UserCtx)
 		r.Use(jwtauth.Verifier(tokenAuth))
-		r.Use(aa.RequestValidator)
+		r.Use(AApi.RequestValidator)
 		r.Get("/", func(w http.ResponseWriter, request *http.Request) {
 			w.Write([]byte("This is a test!"))
 		})
@@ -65,14 +74,7 @@ func TestRequestValidator(t *testing.T) {
 }
 
 func TestSignUpValidator(t *testing.T) {
-	var us mock.UserService
-	var as mock.AuthenticationService
-	var aa AuthenticationAPI
-	var ua UserAPI
-	ua.UserService = &us
-	aa.AuthenticationService = &as
-	implUserServiceMethods(&us)
-	implAuthenticationServiceMehods(&as)
+	initAuthenticationAPI()
 
 	user := domain.User{Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith"}
 
@@ -92,9 +94,9 @@ func TestSignUpValidator(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users", func(r chi.Router) {
-		r.Use(ua.UserRequestCtx)
-		r.Use(aa.SignUpValidator)
-		r.Put("/", ua.CreateUser)
+		r.Use(UApi.UserRequestCtx)
+		r.Use(AApi.SignUpValidator)
+		r.Put("/", UApi.CreateUser)
 	})
 	r.ServeHTTP(w, req)
 
@@ -102,25 +104,19 @@ func TestSignUpValidator(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v\nbody: %v", status, http.StatusCreated, w.Body)
 	}
 
-	if !as.EmailAvailableInvoked {
+	if !ASvc.EmailAvailableInvoked {
 		t.Fatal("expected Authenticate to be invoked")
 	}
 }
 
 func TestLogin(t *testing.T) {
-	var as mock.AuthenticationService
-	var us mock.UserService
-	var aa AuthenticationAPI
-	aa.AuthenticationService = &as
-	aa.UserService = &us
-	implAuthenticationServiceMehods(&as)
-	implUserServiceMethods(&us)
+	initAuthenticationAPI()
+	initUserAPI()
 
 	cred := domain.Credentials{Email: "jacob.smith@unb.ca", Password: "password"}
 
-	var m []byte
-	var err error
-	if m, err = json.Marshal(cred); err != nil {
+	m, err := json.Marshal(cred)
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -132,7 +128,7 @@ func TestLogin(t *testing.T) {
 	req.Header.Add("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
-	handler := http.HandlerFunc(aa.Login)
+	handler := http.HandlerFunc(AApi.Login)
 
 	handler.ServeHTTP(w, req)
 
@@ -140,7 +136,7 @@ func TestLogin(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v.\nBody: %v", status, http.StatusOK, w.Body)
 	}
 
-	if !as.AuthenticateInvoked {
+	if !ASvc.AuthenticateInvoked {
 		t.Fatal("expected Authenticate to be invoked")
 	}
 }
