@@ -29,9 +29,24 @@ func Debug(args ...interface{}) {
 	log.Debug(args...)
 }
 
+//Debugf Debugf wrapper method
+func Debugf(format string, args ...interface{}) {
+	log.Debugf(format, args)
+}
+
 //Fatal Fatal wrapper method
 func Fatal(args ...interface{}) {
 	log.Fatal(args...)
+}
+
+//Error Error wrapper method
+func Error(args ...interface{}) {
+	log.Error(args...)
+}
+
+//Errorf Errorf wrapper method
+func Errorf(format string, args ...interface{}) {
+	log.Errorf(format, args)
 }
 
 //WithField WithField wrapper method
@@ -42,4 +57,9 @@ func WithField(key string, args interface{}) *log.Entry {
 //WithFields WithFields wrapper method
 func WithFields(fields log.Fields) *log.Entry {
 	return log.WithFields(fields)
+}
+
+//WithError WithError wrapper method
+func WithError(err error) *log.Entry {
+	return log.WithError(err)
 }

@@ -56,14 +56,14 @@ func implPillServiceMethods() {
 	}
 }
 
-type test struct {
+type pillTest struct {
 	url    string
 	status int
 	body   string
 	pill   *domain.Pill
 }
 
-var pillCtxTests = []test{
+var pillCtxTests = []pillTest{
 	{"/pills/1", http.StatusOK, "This is a test!", nil},
 	{"/pills/3", http.StatusNotFound, "{\"message\":\"pill not found\"}", nil},
 	{"/pills/bad", http.StatusBadRequest, "{\"message\":\"unable to parse parameter id\"}", nil},
@@ -99,7 +99,7 @@ func TestPillCtx(t *testing.T) {
 	}
 }
 
-var pillsTests = []test{
+var pillsTests = []pillTest{
 	{"/users/1/pills", http.StatusOK, "[{\"pillId\":1,\"id\":1,\"name\":\"DoxyPoxy\",\"daysOfWeek\":[1,2,3,4,5,6,7],\"timesOfDay\":[\"2009-11-10T23:00:00Z\"],\"archived\":false}]", nil},
 	{"/users/2/pills", http.StatusOK, "[]", nil},
 }
@@ -133,7 +133,7 @@ func TestPills(t *testing.T) {
 	}
 }
 
-var updatePillTests = []test{
+var updatePillTests = []pillTest{
 	{"/users/1/pills/1", http.StatusOK, "", &domain.Pill{PillID: 1, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{t}, Archived: false}},
 	{"/users/1/pills/2", http.StatusBadRequest, "{\"message\":\"updated pill id must match the parameter pill id\"}", &domain.Pill{PillID: 1, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{t}, Archived: false}},
 	{"/users/1/pills/1", http.StatusOK, "", &domain.Pill{UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{t}, Archived: false}},

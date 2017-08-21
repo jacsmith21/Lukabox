@@ -24,21 +24,24 @@ func (a *UserAPI) UserCtx(next http.Handler) http.Handler {
 		log.WithField("method", "UserCtx").Info("starting")
 
 		userID := chi.URLParam(r, "userId")
-		if userID == "" {
-			render.Render(w, r, ErrBadRequest(errors.New("paramter id should not be empty")))
-			return
-		}
 		log.WithField("id", userID).Debug("user id from paramter")
 
 		id, err := strconv.Atoi(userID)
 		if err != nil {
-			render.Render(w, r, ErrBadRequest(err))
+			log.WithError(err).Debugf("unable to parse %s", userID)
+			render.Render(w, r, ErrBadRequest(errors.New("unable to parse parameter id")))
 			return
 		}
 
 		user, err := a.UserService.UserByID(id)
 		if err != nil {
-			render.Render(w, r, ErrNotFound(err))
+			log.WithError(err).Errorf("error fetching user with id %d", id)
+			render.Render(w, r, ErrInternalServerError(err))
+			return
+		}
+		if user == nil {
+			log.Debugf("no user found with id %d", id)
+			render.Render(w, r, ErrNotFound(errors.New("user not found")))
 			return
 		}
 
@@ -50,15 +53,17 @@ func (a *UserAPI) UserCtx(next http.Handler) http.Handler {
 // UserRequestCtx a user request context generator
 func (a *UserAPI) UserRequestCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		data := &stc.UserRequest{}
+		userRequest := &stc.UserRequest{}
 
-		err := render.Bind(r, data)
+		err := render.Bind(r, userRequest)
 		if err != nil {
 			render.Render(w, r, ErrBadRequest(err))
 			return
 		}
 
-		user := data.User
+		user := userRequest.User
+		log.WithField("user", user).Debug("user from user request")
+
 		ctx := context.WithValue(r.Context(), "user", user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -76,17 +81,17 @@ func (a *UserAPI) UserByID(w http.ResponseWriter, r *http.Request) {
 
 // Users lists the users using the RenderList function
 func (a *UserAPI) Users(w http.ResponseWriter, r *http.Request) {
-	var users []*domain.User
-	var err error
-
-	if users, err = a.UserService.Users(); err != nil {
-		render.Render(w, r, ErrBadRequest(err))
+	users, err := a.UserService.Users()
+	if err != nil {
+		log.WithError(err).Error("error fetching users")
+		render.Render(w, r, ErrInternalServerError(errors.New("error fetching users")))
 		return
 	}
 
 	err = render.RenderList(w, r, stc.NewUserListResponse(users))
 	if err != nil {
-		render.Render(w, r, ErrBadRequest(err))
+		log.WithError(err).Error("error creating response")
+		render.Render(w, r, ErrInternalServerError(errors.New("error creating response")))
 		return
 	}
 }

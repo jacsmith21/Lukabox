@@ -39,5 +39,14 @@ func ErrNotFound(err error) render.Renderer {
 	}
 }
 
+// ErrInternalServiceError not found ErrBadRequest
+func ErrInternalServerError(err error) render.Renderer {
+	return &ErrResponse{
+		Err:            err,
+		HTTPStatusCode: 500,
+		Message:        err.Error(),
+	}
+}
+
 // ErrUnauthorized 401 error
 var ErrUnauthorized = &ErrResponse{HTTPStatusCode: 401, Message: "Unauthorized"}

@@ -24,7 +24,6 @@ type UserRequest struct {
 
 // Bind post-processing after decode
 func (u *UserRequest) Bind(r *http.Request) error {
-	u.User.Archived = false
 	return nil
 }
 

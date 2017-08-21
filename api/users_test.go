@@ -33,6 +33,8 @@ func implUserServiceMethods() {
 		} else if id == 2 {
 			user := domain.User{ID: 2, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
 			return &user, nil
+		} else if id == 3 {
+			return nil, errors.New("test error")
 		}
 		return nil, nil
 	}
@@ -96,15 +98,44 @@ func implUserServiceMethods() {
 	}
 }
 
+type test struct {
+	url     string
+	method  string
+	reqBody string
+	status  int
+	resBody string
+}
+
+func runTests(t *testing.T, r *chi.Mux, tests []*test) {
+	for _, test := range tests {
+		req, err := http.NewRequest(test.method, test.url, strings.NewReader(test.reqBody))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Add("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if status := w.Code; status != test.status {
+			t.Errorf("handler returned wrong status code: got %v want %v for %s %s", status, test.status, test.method, test.url)
+		}
+
+		body := strings.TrimSpace(w.Body.String())
+		if body != test.resBody {
+			t.Errorf("handler returned wrong body:\n%v\ninstead of:\n%v\nfor %v", body, test.resBody, test.url)
+		}
+	}
+}
+
 func TestUserCtx(t *testing.T) {
 	initUserAPI()
 
-	req, err := http.NewRequest("GET", "/users/1", nil)
-	if err != nil {
-		t.Fatal(err)
+	userCtxTests := []*test{
+		{"/users/1", "GET", "", http.StatusOK, "This is a test!"},
+		{"/users/3", "GET", "", http.StatusInternalServerError, "{\"message\":\"test error\"}"},
+		{"/users/4", "GET", "", http.StatusNotFound, "{\"message\":\"user not found\"}"},
+		{"/users/ahh", "GET", "", http.StatusBadRequest, "{\"message\":\"unable to parse parameter id\"}"},
 	}
-
-	w := httptest.NewRecorder()
 
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
@@ -113,34 +144,17 @@ func TestUserCtx(t *testing.T) {
 			w.Write([]byte("This is a test!"))
 		})
 	})
-	r.ServeHTTP(w, req)
 
-	if status := w.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
-	}
-
-	if !USvc.UserByIDInvoked {
-		t.Fatal("expected UsersByID to be invoked")
-	}
+	runTests(t, r, userCtxTests)
 }
 
 func TestUserRequestCtx(t *testing.T) {
 	initUserAPI()
 
-	user := domain.User{Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith"}
-
-	m, err := json.Marshal(user)
-	if err != nil {
-		t.Fatal("error marshaling test user")
+	userRequestCtxTests := []*test{
+		{"/users", "PUT", "{\"email\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\"}", http.StatusOK, "This is a test!"},
+		{"/users", "PUT", "{\"whatisthis\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\"}", http.StatusOK, "This is a test!"},
 	}
-
-	req, err := http.NewRequest("PUT", "/users", bytes.NewReader(m))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	req.Header.Add("Content-Type", "application/json")
-	w := httptest.NewRecorder()
 
 	r := chi.NewRouter()
 	r.Route("/users", func(r chi.Router) {
@@ -149,63 +163,40 @@ func TestUserRequestCtx(t *testing.T) {
 			w.Write([]byte("This is a test!"))
 		})
 	})
-	r.ServeHTTP(w, req)
 
-	if status := w.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v\nbody: %v", status, http.StatusOK, w.Body)
-	}
+	runTests(t, r, userRequestCtxTests)
 }
 
-func TestUsersByID(t *testing.T) {
+func TestUserByID(t *testing.T) {
 	initUserAPI()
 
-	req, err := http.NewRequest("GET", "/users/1", nil)
-	if err != nil {
-		t.Fatal(err)
+	userByIDTests := []*test{
+		{"/users/1", "GET", "", http.StatusOK, "{\"id\":1,\"password\":\"password\",\"email\":\"jacob.smith@unb.ca\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\",\"archived\":false}"},
+		{"/users/2", "GET", "", http.StatusOK, "{\"id\":2,\"password\":\"password\",\"email\":\"jacob.smith@unb.ca\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\",\"archived\":false}"},
+		{"/users/3", "GET", "", http.StatusInternalServerError, "{\"message\":\"test error\"}"},
+		{"/users/4", "GET", "", http.StatusNotFound, "{\"message\":\"user not found\"}"},
 	}
-	w := httptest.NewRecorder()
 
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
 		r.Use(UApi.UserCtx)
 		r.Get("/", UApi.UserByID)
 	})
-	r.ServeHTTP(w, req)
 
-	if status := w.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
-	}
-
-	expected := "{\"id\":1,\"password\":\"password\",\"email\":\"jacob.smith@unb.ca\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\",\"archived\":false}"
-	if body := w.Body.String(); strings.Trim(body, "\n") != expected {
-		t.Errorf("expected body to be: \n%s\nnot\n%s", expected, body)
-	}
-
-	if !USvc.UserByIDInvoked {
-		t.Fatal("expected UserByID to be invoked")
-	}
+	runTests(t, r, userByIDTests)
 }
 
 func TestUsers(t *testing.T) {
 	initUserAPI()
 
-	req, err := http.NewRequest("GET", "/users", nil)
-	if err != nil {
-		t.Fatal(err)
+	usersTests := []*test{
+		{"/users", "GET", "", http.StatusOK, "[{\"id\":1,\"password\":\"password\",\"email\":\"jacob.smith@unb.ca\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\",\"archived\":false}]"},
 	}
 
-	w := httptest.NewRecorder()
-	handler := http.HandlerFunc(UApi.Users)
+	r := chi.NewRouter()
+	r.Get("/users", UApi.Users)
 
-	handler.ServeHTTP(w, req)
-
-	if status := w.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
-	}
-
-	if !USvc.UsersInvoked {
-		t.Fatal("expected Users to be invoked")
-	}
+	runTests(t, r, usersTests)
 }
 
 func TestCreateUser(t *testing.T) {
