@@ -57,7 +57,8 @@ func (a *UserAPI) UserRequestCtx(next http.Handler) http.Handler {
 
 		err := render.Bind(r, userRequest)
 		if err != nil {
-			render.Render(w, r, ErrBadRequest(err))
+			log.WithError(err).Error("error binding user request")
+			render.Render(w, r, ErrInternalServerError(err))
 			return
 		}
 
@@ -74,7 +75,8 @@ func (a *UserAPI) UserByID(w http.ResponseWriter, r *http.Request) {
 	log.WithField("method", "UserByID").Info("starting")
 	user := r.Context().Value("user").(*domain.User)
 	if err := render.Render(w, r, stc.NewUserResponse(user)); err != nil {
-		render.Render(w, r, ErrBadRequest(err))
+		log.WithError(err).Error("unable to render user response")
+		render.Render(w, r, ErrInternalServerError(err))
 		return
 	}
 }
@@ -84,13 +86,12 @@ func (a *UserAPI) Users(w http.ResponseWriter, r *http.Request) {
 	users, err := a.UserService.Users()
 	if err != nil {
 		log.WithError(err).Error("error fetching users")
-		render.Render(w, r, ErrInternalServerError(errors.New("error fetching users")))
+		render.Render(w, r, ErrInternalServerError(err))
 		return
 	}
 
-	err = render.RenderList(w, r, stc.NewUserListResponse(users))
-	if err != nil {
-		log.WithError(err).Error("error creating response")
+	if err := render.RenderList(w, r, stc.NewUserListResponse(users)); err != nil {
+		log.WithError(err).Error("error rendering user list response")
 		render.Render(w, r, ErrInternalServerError(errors.New("error creating response")))
 		return
 	}
@@ -100,7 +101,14 @@ func (a *UserAPI) Users(w http.ResponseWriter, r *http.Request) {
 func (a *UserAPI) CreateUser(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value("user").(*domain.User)
 
-	a.UserService.CreateUser(user)
+	a.UserService.ValidateUser(user)
+
+	err := a.UserService.InsertUser(user)
+	if err != nil {
+		log.WithError(err).Error("error inserting user")
+		render.Render(w, r, ErrInternalServerError(err))
+		return
+	}
 
 	render.Status(r, http.StatusCreated)
 	render.Render(w, r, stc.NewUserResponse(user)) //TODO change this

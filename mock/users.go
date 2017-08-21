@@ -1,51 +1,75 @@
 package mock
 
-import "github.com/jacsmith21/lukabox/domain"
+import (
+	"errors"
+
+	"github.com/jacsmith21/lukabox/domain"
+)
 
 // UserService represents a mock implementation of domain.UserService.
-type UserService struct {
-	UserByIDFn      func(id int) (*domain.User, error)
-	UserByIDInvoked bool
-
-	UserByEmailFn      func(email string) (*domain.User, error)
-	UserByEmailInvoked bool
-
-	UsersFn      func() ([]*domain.User, error)
-	UsersInvoked bool
-
-	CreateUserFn      func(user *domain.User) error
-	CreateUserInvoked bool
-
-	UpdateUserFn      func(id int, user *domain.User) error
-	UpdateUserInvoked bool
-}
+type UserService struct{}
 
 //UserByID invokes the mock implementation and marks the function as invoked.
 func (s *UserService) UserByID(id int) (*domain.User, error) {
-	s.UserByIDInvoked = true
-	return s.UserByIDFn(id)
+	if id == 1 {
+		user := domain.User{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
+		return &user, nil
+	} else if id == 2 {
+		user := domain.User{ID: 2, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
+		return &user, nil
+	} else if id == 3 {
+		return nil, errors.New("test error")
+	}
+	return nil, nil
 }
 
 //UserByEmail mock implementation
 func (s *UserService) UserByEmail(email string) (*domain.User, error) {
-	s.UserByEmailInvoked = true
-	return s.UserByEmailFn(email)
+	if email == "jacob.smith@unb.ca" {
+		user := domain.User{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
+		return &user, nil
+	} else if email == "" {
+		return nil, errors.New("no email supplied")
+	}
+	return nil, nil
 }
+
+var usersCount = 0
 
 //Users mock implementation
 func (s *UserService) Users() ([]*domain.User, error) {
-	s.UsersInvoked = true
-	return s.UsersFn()
+	usersCount++
+	if usersCount == 1 {
+		users := []*domain.User{
+			{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false},
+		}
+		return users, nil
+	} else if usersCount == 2 {
+		return nil, nil
+	}
+	return nil, errors.New("test error")
 }
 
-//CreateUser mock implementation
-func (s *UserService) CreateUser(user *domain.User) error {
-	s.CreateUserInvoked = true
-	return s.CreateUserFn(user)
+// ValidateUser mock implementation
+func (s *UserService) ValidateUser(user *domain.User) error {
+	return nil
+}
+
+var insertUserCount = 0
+
+// InsertUser mock implementation
+func (s *UserService) InsertUser(user *domain.User) error {
+	if insertUserCount == 0 {
+		return nil
+	}
+	insertUserCount++
+	return errors.New("test error")
 }
 
 //UpdateUser mock implementation
 func (s *UserService) UpdateUser(id int, user *domain.User) error {
-	s.UpdateUserInvoked = true
-	return s.UpdateUserFn(id, user)
+	if id != 1 {
+		return errors.New("expected id to be 1")
+	}
+	return nil
 }

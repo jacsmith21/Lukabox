@@ -16,8 +16,28 @@ var users = []*domain.User{
 type UserService struct {
 }
 
-//CreateUser creates a user in the database
-func (s *UserService) CreateUser(user *domain.User) error {
+// ValidateUser validatese a user
+func (s *UserService) ValidateUser(user *domain.User) error {
+	if user.Email == "" {
+		return errors.New("a user must have an email")
+	}
+	if user.FirstName == "" {
+		return errors.New("a user must have a first name")
+	}
+	if user.LastName == "" {
+		return errors.New("a user must have a last name")
+	}
+	if user.Password == "" {
+		return errors.New("a user must have a password")
+	}
+	return nil
+}
+
+// InsertUser creates a user in the database
+func (s *UserService) InsertUser(user *domain.User) error {
+	if user.ID != 0 {
+		return errors.New("user id must equal 0")
+	}
 	user.ID = users[len(users)-1].ID + 1
 	users = append(users, user)
 	return nil

@@ -17,5 +17,10 @@ $ go get github.com/Sirupsen/logrus
 $ vod run main.go
 ```
 
+## TODO
+* Finish user tests then work your way back to authentication and pill tests
+* Ensure mocks are refactored
+* Ensure the tests are enforcing certain messages
+
 ## References
 * https://forum.golangbridge.org/t/comparing-the-structure-of-web-applications/1198/16

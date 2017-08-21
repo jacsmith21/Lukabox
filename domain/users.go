@@ -15,6 +15,7 @@ type UserService interface {
 	UserByID(id int) (*User, error)
 	UserByEmail(email string) (*User, error)
 	Users() ([]*User, error)
-	CreateUser(user *User) error
+	ValidateUser(user *User) error
+	InsertUser(user *User) error
 	UpdateUser(id int, user *User) error
 }

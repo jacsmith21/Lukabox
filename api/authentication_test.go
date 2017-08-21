@@ -24,7 +24,6 @@ func initAuthenticationAPI() {
 
 	USvc = mock.UserService{}
 	AApi.UserService = &USvc
-	implUserServiceMethods()
 }
 
 func implAuthenticationServiceMethods() {
