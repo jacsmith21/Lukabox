@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/jacsmith21/lukabox/domain"
+	log "github.com/jacsmith21/lukabox/ext/logrus"
 )
 
 var users = []*domain.User{
@@ -18,6 +19,7 @@ type UserService struct {
 
 // ValidateUser validatese a user
 func (s *UserService) ValidateUser(user *domain.User) error {
+	log.WithField("user", user).Info("validate user")
 	if user.Email == "" {
 		return errors.New("a user must have an email")
 	}

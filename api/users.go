@@ -53,6 +53,7 @@ func (a *UserAPI) UserCtx(next http.Handler) http.Handler {
 // UserRequestCtx a user request context generator
 func (a *UserAPI) UserRequestCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.WithField("method", "UserRequestCtx").Info("starting")
 		userRequest := &stc.UserRequest{}
 
 		err := render.Bind(r, userRequest)
@@ -83,6 +84,7 @@ func (a *UserAPI) UserByID(w http.ResponseWriter, r *http.Request) {
 
 // Users lists the users using the RenderList function
 func (a *UserAPI) Users(w http.ResponseWriter, r *http.Request) {
+	log.WithField("method", "Users").Info("starting")
 	users, err := a.UserService.Users()
 	if err != nil {
 		log.WithError(err).Error("error fetching users")
@@ -99,19 +101,22 @@ func (a *UserAPI) Users(w http.ResponseWriter, r *http.Request) {
 
 //CreateUser creates a user
 func (a *UserAPI) CreateUser(w http.ResponseWriter, r *http.Request) {
+	log.WithField("method", "CreateUser").Info("starting")
 	user := r.Context().Value("user").(*domain.User)
 
-	a.UserService.ValidateUser(user)
+	if err := a.UserService.ValidateUser(user); err != nil {
+		log.WithError(err).Debug("user could not be validated")
+		render.Render(w, r, ErrBadRequest(err))
+		return
+	}
 
-	err := a.UserService.InsertUser(user)
-	if err != nil {
+	if err := a.UserService.InsertUser(user); err != nil {
 		log.WithError(err).Error("error inserting user")
 		render.Render(w, r, ErrInternalServerError(err))
 		return
 	}
 
-	render.Status(r, http.StatusCreated)
-	render.Render(w, r, stc.NewUserResponse(user)) //TODO change this
+	w.WriteHeader(http.StatusCreated)
 }
 
 // UpdateUser updates the user
@@ -126,6 +131,4 @@ func (a *UserAPI) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	user = data.User
 	a.UserService.UpdateUser(user.ID, user)
-
-	render.Render(w, r, stc.NewUserResponse(user))
 }

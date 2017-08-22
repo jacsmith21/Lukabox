@@ -1,15 +1,12 @@
 package api
 
 import (
-	"bytes"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/go-chi/chi"
-	"github.com/jacsmith21/lukabox/domain"
 	"github.com/jacsmith21/lukabox/mock"
 )
 
@@ -30,7 +27,7 @@ type test struct {
 }
 
 func runTests(t *testing.T, r *chi.Mux, tests []*test) {
-	for _, test := range tests {
+	for i, test := range tests {
 		req, err := http.NewRequest(test.method, test.url, strings.NewReader(test.reqBody))
 		if err != nil {
 			t.Fatal(err)
@@ -40,12 +37,12 @@ func runTests(t *testing.T, r *chi.Mux, tests []*test) {
 		r.ServeHTTP(w, req)
 
 		if status := w.Code; status != test.status {
-			t.Errorf("handler returned wrong status code: got %v want %v for %s %s", status, test.status, test.method, test.url)
+			t.Errorf("handler returned wrong status code: got %v want %v on iteration %d", status, test.status, i)
 		}
 
 		body := strings.TrimSpace(w.Body.String())
 		if body != test.resBody {
-			t.Errorf("handler returned wrong body:\n%v\ninstead of:\n%v\nfor %v", body, test.resBody, test.url)
+			t.Errorf("handler returned wrong body:\n%v\ninstead of:\n%v\n on iteration %d", body, test.resBody, i)
 		}
 	}
 }
@@ -129,6 +126,11 @@ func TestCreateUser(t *testing.T) {
 
 	createUserTests := []*test{
 		{"/users", "PUT", "{\"email\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\"}", http.StatusCreated, ""},
+		{"/users", "PUT", "{\"email\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\"}", http.StatusInternalServerError, "{\"message\":\"test error\"}"},
+		{"/users", "PUT", "{\"eml\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\"}", http.StatusBadRequest, "{\"message\":\"a user must have an email\"}"},
+		{"/users", "PUT", "{\"email\":\"jacob.smith@unb.ca\",\"passrd\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\"}", http.StatusBadRequest, "{\"message\":\"a user must have a password\"}"},
+		{"/users", "PUT", "{\"email\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"fitName\":\"Jacob\",\"lastName\":\"Smith\"}", http.StatusBadRequest, "{\"message\":\"a user must have a first name\"}"},
+		{"/users", "PUT", "{\"email\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lasame\":\"Smith\"}", http.StatusBadRequest, "{\"message\":\"a user must have a last name\"}"},
 	}
 
 	r := chi.NewRouter()
@@ -143,31 +145,17 @@ func TestCreateUser(t *testing.T) {
 func TestUpdateUser(t *testing.T) {
 	initUserAPI()
 
-	user := domain.User{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
-
-	var m []byte
-	var err error
-	if m, err = json.Marshal(user); err != nil {
-		t.Fatal("error marshaling test user")
+	updateUserTests := []*test{
+		{"/users/1", "POST", "{\"ID\":1,\"email\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\",\"Archived\":false}", http.StatusOK, ""},
+		{"/users/1", "POST", "{\"ID\":\"1\",\"email\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\",\"Archived\":false}", http.StatusBadRequest, "{\"message\":\"json: cannot unmarshal string into Go struct field UserRequest.id of type int\"}"},
+		{"/users/1", "POST", "{\"ID\":1,\"email\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\",\"Archived\":\"false\"}", http.StatusBadRequest, "{\"message\":\"json: cannot unmarshal string into Go struct field UserRequest.archived of type bool\"}"},
 	}
-
-	req, err := http.NewRequest("POST", "/users/1", bytes.NewReader(m))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	req.Header.Add("Content-Type", "application/json")
-
-	w := httptest.NewRecorder()
 
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
 		r.Use(UApi.UserCtx)
 		r.Post("/", UApi.UpdateUser)
 	})
-	r.ServeHTTP(w, req)
 
-	if status := w.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
-	}
+	runTests(t, r, updateUserTests)
 }

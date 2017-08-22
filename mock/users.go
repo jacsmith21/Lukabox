@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/jacsmith21/lukabox/domain"
+	"github.com/jacsmith21/lukabox/ext/db"
 )
 
 // UserService represents a mock implementation of domain.UserService.
@@ -52,17 +53,18 @@ func (s *UserService) Users() ([]*domain.User, error) {
 
 // ValidateUser mock implementation
 func (s *UserService) ValidateUser(user *domain.User) error {
-	return nil
+	us := db.UserService{}
+	return us.ValidateUser(user)
 }
 
 var insertUserCount = 0
 
 // InsertUser mock implementation
 func (s *UserService) InsertUser(user *domain.User) error {
-	if insertUserCount == 0 {
+	insertUserCount++
+	if insertUserCount == 2 {
 		return nil
 	}
-	insertUserCount++
 	return errors.New("test error")
 }
 

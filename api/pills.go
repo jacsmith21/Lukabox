@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strconv"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	"github.com/jacsmith21/lukabox/domain"
+	log "github.com/jacsmith21/lukabox/ext/logrus"
 	"github.com/jacsmith21/lukabox/stc"
 )
 
