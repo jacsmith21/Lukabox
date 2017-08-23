@@ -104,11 +104,12 @@ func (a *UserAPI) CreateUser(w http.ResponseWriter, r *http.Request) {
 	log.WithField("method", "CreateUser").Info("starting")
 	user := r.Context().Value("user").(*domain.User)
 
-	if err := a.UserService.ValidateUser(user); err != nil {
+	//TODO implement validation
+	/*if err := a.UserService.ValidateUser(user); err != nil {
 		log.WithError(err).Debug("user could not be validated")
 		render.Render(w, r, ErrBadRequest(err))
 		return
-	}
+	}*/
 
 	if err := a.UserService.InsertUser(user); err != nil {
 		log.WithError(err).Error("error inserting user")

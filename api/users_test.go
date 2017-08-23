@@ -1,12 +1,14 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/go-chi/chi"
+	"github.com/jacsmith21/lukabox/domain"
 	"github.com/jacsmith21/lukabox/mock"
 )
 
@@ -62,6 +64,19 @@ func TestUserCtx(t *testing.T) {
 		{"/users/ahh", "GET", "", nil, http.StatusBadRequest, `{"message":"unable to parse parameter id"}`},
 	}
 
+	USvc.UserByIDFn = func(id int) (*domain.User, error) {
+		if id == 1 {
+			user := domain.User{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
+			return &user, nil
+		} else if id == 2 {
+			user := domain.User{ID: 2, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
+			return &user, nil
+		} else if id == 3 {
+			return nil, errors.New("test error")
+		}
+		return nil, nil
+	}
+
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
 		r.Use(UApi.UserCtx)
@@ -102,6 +117,10 @@ func TestUserByID(t *testing.T) {
 		{"/users/4", "GET", "", nil, http.StatusNotFound, `{"message":"user not found"}`},
 	}
 
+	USvc.UserByIDFn = func(id int) (*domain.User, error) {
+		return &domain.User{ID: id, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}, nil
+	}
+
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
 		r.Use(UApi.UserCtx)
@@ -114,16 +133,30 @@ func TestUserByID(t *testing.T) {
 func TestUsers(t *testing.T) {
 	initUserAPI()
 
-	usersTests := []*test{
+	tests := []*test{
 		{"/users", "GET", "", nil, http.StatusOK, `[{"id":1,"password":"password","email":"jacob.smith@unb.ca","firstName":"Jacob","lastName":"Smith","archived":false}]`},
 		{"/users", "GET", "", nil, http.StatusInternalServerError, `{"message":"test error"}`},
 		{"/users", "GET", "", nil, http.StatusOK, "[]"},
 	}
 
+	count := 0
+	USvc.UsersFn = func() ([]*domain.User, error) {
+		count++
+		if count == 1 {
+			users := []*domain.User{
+				{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false},
+			}
+			return users, nil
+		} else if count == 2 {
+			return nil, nil
+		}
+		return nil, errors.New("test error")
+	}
+
 	r := chi.NewRouter()
 	r.Get("/users", UApi.Users)
 
-	runTests(t, r, usersTests)
+	runTests(t, r, tests)
 }
 
 func TestCreateUser(t *testing.T) {
@@ -132,10 +165,15 @@ func TestCreateUser(t *testing.T) {
 	createUserTests := []*test{
 		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusCreated, ""},
 		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusInternalServerError, `{"message":"test error"}`},
-		{"/users", "PUT", `{"eml":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"a user must have an email"}`},
-		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","passrd":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"a user must have a password"}`},
-		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","fitName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"a user must have a first name"}`},
-		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lasame":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"a user must have a last name"}`},
+	}
+
+	count := 0
+	USvc.InsertUserFn = func(user *domain.User) error {
+		count++
+		if count == 1 {
+			return nil
+		}
+		return errors.New("test error")
 	}
 
 	r := chi.NewRouter()
@@ -154,6 +192,17 @@ func TestUpdateUser(t *testing.T) {
 		{"/users/1", "POST", `{"ID":1,"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith","Archived":false}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, ""},
 		{"/users/1", "POST", `{"ID":"1","email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith","Archived":false}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"json: cannot unmarshal string into Go struct field UserRequest.id of type int"}`},
 		{"/users/1", "POST", `{"ID":1,"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith","Archived":"false"}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"json: cannot unmarshal string into Go struct field UserRequest.archived of type bool"}`},
+	}
+
+	USvc.UserByIDFn = func(id int) (*domain.User, error) {
+		return &domain.User{ID: id, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}, nil
+	}
+
+	USvc.UpdateUserFn = func(id int, user *domain.User) error {
+		if id != 1 {
+			return errors.New("expected id to be 1")
+		}
+		return nil
 	}
 
 	r := chi.NewRouter()

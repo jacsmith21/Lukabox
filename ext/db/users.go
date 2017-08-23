@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/jacsmith21/lukabox/domain"
-	log "github.com/jacsmith21/lukabox/ext/logrus"
 )
 
 var users = []*domain.User{
@@ -15,24 +14,6 @@ var users = []*domain.User{
 
 //UserService represents an implementation UserService
 type UserService struct {
-}
-
-// ValidateUser validatese a user
-func (s *UserService) ValidateUser(user *domain.User) error {
-	log.WithField("user", user).Info("validate user")
-	if user.Email == "" {
-		return errors.New("a user must have an email")
-	}
-	if user.FirstName == "" {
-		return errors.New("a user must have a first name")
-	}
-	if user.LastName == "" {
-		return errors.New("a user must have a last name")
-	}
-	if user.Password == "" {
-		return errors.New("a user must have a password")
-	}
-	return nil
 }
 
 // InsertUser creates a user in the database

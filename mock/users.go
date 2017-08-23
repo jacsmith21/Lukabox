@@ -4,74 +4,53 @@ import (
 	"errors"
 
 	"github.com/jacsmith21/lukabox/domain"
-	"github.com/jacsmith21/lukabox/ext/db"
 )
 
 // UserService represents a mock implementation of domain.UserService.
-type UserService struct{}
+type UserService struct {
+	UserByIDFn    func(id int) (*domain.User, error)
+	UserByEmailFn func(email string) (*domain.User, error)
+	UsersFn       func() ([]*domain.User, error)
+	InsertUserFn  func(user *domain.User) error
+	UpdateUserFn  func(id int, user *domain.User) error
+}
 
 //UserByID invokes the mock implementation and marks the function as invoked.
 func (s *UserService) UserByID(id int) (*domain.User, error) {
-	if id == 1 {
-		user := domain.User{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
-		return &user, nil
-	} else if id == 2 {
-		user := domain.User{ID: 2, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
-		return &user, nil
-	} else if id == 3 {
-		return nil, errors.New("test error")
+	if s.UserByIDFn == nil {
+		return nil, errors.New("UserByIDFn not implemented")
 	}
-	return nil, nil
+	return s.UserByIDFn(id)
 }
 
 //UserByEmail mock implementation
 func (s *UserService) UserByEmail(email string) (*domain.User, error) {
-	if email == "jacob.smith@unb.ca" {
-		user := domain.User{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
-		return &user, nil
-	} else if email == "" {
-		return nil, errors.New("no email supplied")
+	if s.UserByEmailFn == nil {
+		return nil, errors.New("UserByEmailFn not implemented")
 	}
-	return nil, nil
+	return s.UserByEmailFn(email)
 }
-
-var usersCount = 0
 
 //Users mock implementation
 func (s *UserService) Users() ([]*domain.User, error) {
-	usersCount++
-	if usersCount == 1 {
-		users := []*domain.User{
-			{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false},
-		}
-		return users, nil
-	} else if usersCount == 2 {
-		return nil, nil
+	if s.UsersFn == nil {
+		return nil, errors.New("UsersFn not implemented")
 	}
-	return nil, errors.New("test error")
+	return s.UsersFn()
 }
-
-// ValidateUser mock implementation
-func (s *UserService) ValidateUser(user *domain.User) error {
-	us := db.UserService{}
-	return us.ValidateUser(user)
-}
-
-var insertUserCount = 0
 
 // InsertUser mock implementation
 func (s *UserService) InsertUser(user *domain.User) error {
-	insertUserCount++
-	if insertUserCount == 2 {
-		return nil
+	if s.InsertUserFn == nil {
+		return errors.New("InsertUserFn not implemeted")
 	}
-	return errors.New("test error")
+	return s.InsertUserFn(user)
 }
 
 //UpdateUser mock implementation
 func (s *UserService) UpdateUser(id int, user *domain.User) error {
-	if id != 1 {
-		return errors.New("expected id to be 1")
+	if s.UpdateUserFn == nil {
+		return errors.New("UpdateUserFn not implemented")
 	}
-	return nil
+	return s.UpdateUserFn(id, user)
 }

@@ -71,6 +71,10 @@ func TestPills(t *testing.T) {
 		return pills, nil
 	}
 
+	USvc.UserByIDFn = func(id int) (*domain.User, error) {
+		return &domain.User{ID: id, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}, nil
+	}
+
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
 		r.Use(UApi.UserCtx)
@@ -93,6 +97,10 @@ func TestUpdatePill(t *testing.T) {
 	d := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
 	PSvc.PillFn = func(id int) (*domain.Pill, error) {
 		return &domain.Pill{PillID: id, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{d}, Archived: false}, nil
+	}
+
+	USvc.UserByIDFn = func(id int) (*domain.User, error) {
+		return &domain.User{ID: id, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}, nil
 	}
 
 	PSvc.UpdatePillFn = func(id int, pill *domain.Pill) error {
