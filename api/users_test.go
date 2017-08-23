@@ -47,9 +47,9 @@ func runTests(t *testing.T, r *chi.Mux, tests []*test) {
 }
 
 func TestUserCtx(t *testing.T) {
-	uApi := UserAPI{}
+	uAPI := UserAPI{}
 	uSvc := mock.UserService{}
-	uApi.UserService = &uSvc
+	uAPI.UserService = &uSvc
 
 	userCtxTests := []*test{
 		{"/users/1", "GET", "", nil, http.StatusOK, "This is a test!"},
@@ -73,7 +73,7 @@ func TestUserCtx(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
-		r.Use(uApi.UserCtx)
+		r.Use(uAPI.UserCtx)
 		r.Get("/", func(w http.ResponseWriter, request *http.Request) {
 			w.Write([]byte("This is a test!"))
 		})
@@ -83,9 +83,9 @@ func TestUserCtx(t *testing.T) {
 }
 
 func TestUserRequestCtx(t *testing.T) {
-	uApi := UserAPI{}
+	uAPI := UserAPI{}
 	uSvc := mock.UserService{}
-	uApi.UserService = &uSvc
+	uAPI.UserService = &uSvc
 
 	userRequestCtxTests := []*test{
 		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, "This is a test!"},
@@ -94,7 +94,7 @@ func TestUserRequestCtx(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users", func(r chi.Router) {
-		r.Use(uApi.UserRequestCtx)
+		r.Use(uAPI.UserRequestCtx)
 		r.Put("/", func(w http.ResponseWriter, request *http.Request) {
 			w.Write([]byte("This is a test!"))
 		})
@@ -104,9 +104,9 @@ func TestUserRequestCtx(t *testing.T) {
 }
 
 func TestUserByID(t *testing.T) {
-	uApi := UserAPI{}
+	uAPI := UserAPI{}
 	uSvc := mock.UserService{}
-	uApi.UserService = &uSvc
+	uAPI.UserService = &uSvc
 
 	userByIDTests := []*test{
 		{"/users/1", "GET", "", nil, http.StatusOK, `{"id":1,"password":"password","email":"jacob.smith@unb.ca","firstName":"Jacob","lastName":"Smith","archived":false}`},
@@ -125,17 +125,17 @@ func TestUserByID(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
-		r.Use(uApi.UserCtx)
-		r.Get("/", uApi.UserByID)
+		r.Use(uAPI.UserCtx)
+		r.Get("/", uAPI.UserByID)
 	})
 
 	runTests(t, r, userByIDTests)
 }
 
 func TestUsers(t *testing.T) {
-	uApi := UserAPI{}
+	uAPI := UserAPI{}
 	uSvc := mock.UserService{}
-	uApi.UserService = &uSvc
+	uAPI.UserService = &uSvc
 
 	tests := []*test{
 		{"/users", "GET", "", nil, http.StatusOK, `[{"id":1,"password":"password","email":"jacob.smith@unb.ca","firstName":"Jacob","lastName":"Smith","archived":false}]`},
@@ -158,15 +158,15 @@ func TestUsers(t *testing.T) {
 	}
 
 	r := chi.NewRouter()
-	r.Get("/users", uApi.Users)
+	r.Get("/users", uAPI.Users)
 
 	runTests(t, r, tests)
 }
 
 func TestCreateUser(t *testing.T) {
-	uApi := UserAPI{}
+	uAPI := UserAPI{}
 	uSvc := mock.UserService{}
-	uApi.UserService = &uSvc
+	uAPI.UserService = &uSvc
 
 	createUserTests := []*test{
 		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusCreated, ""},
@@ -184,17 +184,17 @@ func TestCreateUser(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users", func(r chi.Router) {
-		r.Use(uApi.UserRequestCtx)
-		r.Put("/", uApi.CreateUser)
+		r.Use(uAPI.UserRequestCtx)
+		r.Put("/", uAPI.CreateUser)
 	})
 
 	runTests(t, r, createUserTests)
 }
 
 func TestUpdateUser(t *testing.T) {
-	uApi := UserAPI{}
+	uAPI := UserAPI{}
 	uSvc := mock.UserService{}
-	uApi.UserService = &uSvc
+	uAPI.UserService = &uSvc
 
 	updateUserTests := []*test{
 		{"/users/1", "POST", `{"ID":1,"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith","Archived":false}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, ""},
@@ -215,8 +215,8 @@ func TestUpdateUser(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
-		r.Use(uApi.UserCtx)
-		r.Post("/", uApi.UpdateUser)
+		r.Use(uAPI.UserCtx)
+		r.Post("/", uAPI.UpdateUser)
 	})
 
 	runTests(t, r, updateUserTests)

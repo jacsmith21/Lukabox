@@ -39,7 +39,7 @@ func ErrNotFound(err error) render.Renderer {
 	}
 }
 
-// ErrInternalServiceError not found ErrBadRequest
+// ErrInternalServerError not found ErrBadRequest
 func ErrInternalServerError(err error) render.Renderer {
 	return &ErrResponse{
 		Err:            err,
@@ -48,6 +48,7 @@ func ErrInternalServerError(err error) render.Renderer {
 	}
 }
 
+// ErrConflict conflict error
 func ErrConflict(err error) render.Renderer {
 	return &ErrResponse{
 		Err:            err,

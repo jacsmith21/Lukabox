@@ -12,9 +12,9 @@ import (
 )
 
 func TestPillCtx(t *testing.T) {
-	pApi := PillAPI{}
+	pAPI := PillAPI{}
 	pSvc := mock.PillService{}
-	pApi.PillService = &pSvc
+	pAPI.PillService = &pSvc
 
 	tests := []*test{
 		{"/pills/1", "", "GET", nil, http.StatusOK, "This is a test!"},
@@ -36,7 +36,7 @@ func TestPillCtx(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/pills/{pillId}", func(r chi.Router) {
-		r.Use(pApi.PillCtx)
+		r.Use(pAPI.PillCtx)
 		r.Get("/", func(w http.ResponseWriter, request *http.Request) {
 			w.Write([]byte("This is a test!"))
 		})
@@ -46,13 +46,13 @@ func TestPillCtx(t *testing.T) {
 }
 
 func TestPills(t *testing.T) {
-	pApi := PillAPI{}
+	pAPI := PillAPI{}
 	pSvc := mock.PillService{}
-	pApi.PillService = &pSvc
+	pAPI.PillService = &pSvc
 
-	uApi := UserAPI{}
+	uAPI := UserAPI{}
 	uSvc := mock.UserService{}
-	uApi.UserService = &uSvc
+	uAPI.UserService = &uSvc
 
 	tests := []*test{
 		{"/users/1/pills", "", "GET", nil, http.StatusOK, `[{"pillId":1,"id":1,"name":"DoxyPoxy","daysOfWeek":[1],"timesOfDay":["2009-11-10T23:00:00Z"],"archived":false}]`},
@@ -76,21 +76,21 @@ func TestPills(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
-		r.Use(uApi.UserCtx)
-		r.Get("/pills", pApi.Pills)
+		r.Use(uAPI.UserCtx)
+		r.Get("/pills", pAPI.Pills)
 	})
 
 	runTests(t, r, tests)
 }
 
 func TestUpdatePill(t *testing.T) {
-	pApi := PillAPI{}
+	pAPI := PillAPI{}
 	pSvc := mock.PillService{}
-	pApi.PillService = &pSvc
+	pAPI.PillService = &pSvc
 
-	uApi := UserAPI{}
+	uAPI := UserAPI{}
 	uSvc := mock.UserService{}
-	uApi.UserService = &uSvc
+	uAPI.UserService = &uSvc
 
 	var tests = []*test{
 		{"/users/1/pills/1", "POST", `{"pillId":1,"id":1,"name":"DoxyPoxy","daysOfWeek":[1],"timesOfDay":["2009-11-10T23:00:00Z"],"archived":false}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, ""},
@@ -116,10 +116,10 @@ func TestUpdatePill(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
-		r.Use(uApi.UserCtx)
+		r.Use(uAPI.UserCtx)
 		r.Route("/pills/{pillId}", func(r chi.Router) {
-			r.Use(pApi.PillCtx)
-			r.Post("/", pApi.UpdatePill)
+			r.Use(pAPI.PillCtx)
+			r.Post("/", pAPI.UpdatePill)
 		})
 	})
 

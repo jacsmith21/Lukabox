@@ -35,6 +35,7 @@ func (a *AuthenticationAPI) RequestValidator(next http.Handler) http.Handler {
 		id := int(claims["id"].(float64))
 		if user.ID != id {
 			render.Render(w, r, ErrUnauthorized)
+			return
 		}
 
 		next.ServeHTTP(w, r)
