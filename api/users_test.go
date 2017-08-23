@@ -110,12 +110,16 @@ func TestUserByID(t *testing.T) {
 
 	userByIDTests := []*test{
 		{"/users/1", "GET", "", nil, http.StatusOK, `{"id":1,"password":"password","email":"jacob.smith@unb.ca","firstName":"Jacob","lastName":"Smith","archived":false}`},
-		{"/users/2", "GET", "", nil, http.StatusOK, `{"id":2,"password":"password","email":"jacob.smith@unb.ca","firstName":"Jacob","lastName":"Smith","archived":false}`},
 		{"/users/3", "GET", "", nil, http.StatusInternalServerError, `{"message":"test error"}`},
 		{"/users/4", "GET", "", nil, http.StatusNotFound, `{"message":"user not found"}`},
 	}
 
 	uSvc.UserByIDFn = func(id int) (*domain.User, error) {
+		if id == 3 {
+			return nil, errors.New("test error")
+		} else if id == 4 {
+			return nil, nil
+		}
 		return &domain.User{ID: id, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}, nil
 	}
 
@@ -135,8 +139,8 @@ func TestUsers(t *testing.T) {
 
 	tests := []*test{
 		{"/users", "GET", "", nil, http.StatusOK, `[{"id":1,"password":"password","email":"jacob.smith@unb.ca","firstName":"Jacob","lastName":"Smith","archived":false}]`},
+		{"/users", "GET", "", nil, http.StatusOK, `[]`},
 		{"/users", "GET", "", nil, http.StatusInternalServerError, `{"message":"test error"}`},
-		{"/users", "GET", "", nil, http.StatusOK, "[]"},
 	}
 
 	count := 0

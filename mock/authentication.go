@@ -1,6 +1,10 @@
 package mock
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/sirupsen/logrus"
+)
 
 // AuthenticationService represents a mock implementation of domain.AuthenticationService.
 type AuthenticationService struct {
@@ -18,6 +22,7 @@ func (s *AuthenticationService) Authenticate(email string, password string) (boo
 
 // EmailAvailable mock implementation
 func (s *AuthenticationService) EmailAvailable(email string) (bool, error) {
+	logrus.Error("asflh;alsdfhas lsjaf lk ahsdflsa dflsadfklsda jflsjadfljasd l;fsl;df lsda jflsda jflk")
 	if s.EmailAvailableFn == nil {
 		return false, errors.New("EmailAvailable not implemented")
 	}

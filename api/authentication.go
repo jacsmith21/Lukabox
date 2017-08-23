@@ -63,18 +63,16 @@ func (a *AuthenticationAPI) SignUpValidator(next http.Handler) http.Handler {
 //Login login handler
 func (a *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 	log.WithField("method", "Login").Info("starting")
-	var authenticated bool
-	var err error
 
 	c := &stc.CredentialsRequest{}
-	if err = render.Bind(r, c); err != nil {
+	if err := render.Bind(r, c); err != nil {
 		render.Render(w, r, ErrBadRequest(err))
 		return
 	}
 
 	log.WithField("Credentials", c.Credentials).Debug("credentials")
 
-	authenticated, err = a.AuthenticationService.Authenticate(c.Credentials.Email, c.Credentials.Password)
+	authenticated, err := a.AuthenticationService.Authenticate(c.Credentials.Email, c.Credentials.Password)
 	if err != nil {
 		render.Render(w, r, ErrBadRequest(err))
 		return
@@ -96,10 +94,10 @@ func (a *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, ErrBadRequest(err))
 	}
 
-	log.WithField("userbyemail", a.AuthenticationService).Info("Sfjaskflsadfhsaldkf")
 	user, err := a.UserService.UserByEmail(credentials.Email)
 	if err != nil {
 		render.Render(w, r, ErrBadRequest(err))
+		return
 	}
 
 	claims := jwtauth.Claims{"id": user.ID}

@@ -85,11 +85,15 @@ func TestLogin(t *testing.T) {
 	aApi.UserService = &uSvc
 
 	tests := []*test{
-		{"/login", "POST", `{"email":"jacob.smith@unb.ca","password":"password"}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, "This is a test!"},
+		{"/login", "POST", `{"email":"jacob.smith@unb.ca","password":"password"}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, `{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MX0.tjVEMiS5O2yNzclwLdaZ-FuzrhyqOT7UwM9Hfc0ZQ8Q"}`},
 	}
 
 	aSvc.AuthenticateFn = func(email string, password string) (bool, error) {
 		return true, nil
+	}
+
+	uSvc.UserByEmailFn = func(email string) (*domain.User, error) {
+		return &domain.User{ID: 1, Email: email, Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}, nil
 	}
 
 	r := chi.NewRouter()
