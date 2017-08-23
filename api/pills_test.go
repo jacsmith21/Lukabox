@@ -23,9 +23,9 @@ func TestPillCtx(t *testing.T) {
 	initPillAPI()
 
 	tests := []*test{
-		{"/pills/1", "", "", http.StatusOK, "This is a test!"},
-		{"/pills/3", "", "", http.StatusNotFound, `{"message":"pill not found"}`},
-		{"/pills/bad", "", "", http.StatusBadRequest, `{"message":"unable to parse parameter id"}`},
+		{"/pills/1", "", "GET", nil, http.StatusOK, "This is a test!"},
+		{"/pills/3", "", "GET", nil, http.StatusNotFound, `{"message":"pill not found"}`},
+		{"/pills/bad", "", "GET", nil, http.StatusBadRequest, `{"message":"unable to parse parameter id"}`},
 	}
 
 	d := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
@@ -56,8 +56,8 @@ func TestPills(t *testing.T) {
 	initUserAPI()
 
 	tests := []*test{
-		{"/users/1/pills", "", "", http.StatusOK, `[{"pillId":1,"id":1,"name":"DoxyPoxy","daysOfWeek":[1],"timesOfDay":["2009-11-10T23:00:00Z"],"archived":false}]`},
-		{"/users/2/pills", "", "", http.StatusOK, "[]"},
+		{"/users/1/pills", "", "GET", nil, http.StatusOK, `[{"pillId":1,"id":1,"name":"DoxyPoxy","daysOfWeek":[1],"timesOfDay":["2009-11-10T23:00:00Z"],"archived":false}]`},
+		{"/users/2/pills", "", "GET", nil, http.StatusOK, "[]"},
 	}
 
 	d := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
@@ -85,9 +85,9 @@ func TestUpdatePill(t *testing.T) {
 	initUserAPI()
 
 	var tests = []*test{
-		{"/users/1/pills/1", "POST", `{"pillId":1,"id":1,"name":"DoxyPoxy","daysOfWeek":[1],"timesOfDay":["2009-11-10T23:00:00Z"],"archived":false}`, http.StatusOK, ""},
-		{"/users/1/pills/2", "POST", `{"pillId":1,"id":1,"name":"DoxyPoxy", "archived":false}`, http.StatusBadRequest, `{"message":"updated pill id must match the parameter pill id"}`},
-		{"/users/2/pills/1", "POST", `{"pillId":1,"id":1,"name":"DoxyPoxy", "archived":false}`, http.StatusBadRequest, `{"message":"parameter pill user id should match the parameter user ID"}`},
+		{"/users/1/pills/1", "POST", `{"pillId":1,"id":1,"name":"DoxyPoxy","daysOfWeek":[1],"timesOfDay":["2009-11-10T23:00:00Z"],"archived":false}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, ""},
+		{"/users/1/pills/2", "POST", `{"pillId":1,"id":1,"name":"DoxyPoxy", "archived":false}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"updated pill id must match the parameter pill id"}`},
+		{"/users/2/pills/1", "POST", `{"pillId":1,"id":1,"name":"DoxyPoxy", "archived":false}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"parameter pill user id should match the parameter user ID"}`},
 	}
 
 	d := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)

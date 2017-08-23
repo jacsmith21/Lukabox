@@ -1,16 +1,12 @@
 package api
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/jwtauth"
-	"github.com/jacsmith21/lukabox/domain"
 	"github.com/jacsmith21/lukabox/mock"
 )
 
@@ -45,16 +41,13 @@ func implAuthenticationServiceMethods() {
 
 func TestRequestValidator(t *testing.T) {
 	initUserAPI()
+	initAuthenticationAPI()
 
-	req, err := http.NewRequest("GET", "/users/1", nil)
-	if err != nil {
-		t.Fatal(err)
+	tests := []*test{
+		{"/users/1", "GET", "", map[string]string{"Authorization": "BEARER eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MX0.tjVEMiS5O2yNzclwLdaZ-FuzrhyqOT7UwM9Hfc0ZQ8Q"}, http.StatusOK, "This is a test!"},
 	}
 
 	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
-	req.Header.Add("Authorization", "BEARER eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MX0.tjVEMiS5O2yNzclwLdaZ-FuzrhyqOT7UwM9Hfc0ZQ8Q")
-
-	w := httptest.NewRecorder()
 
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
@@ -65,31 +58,17 @@ func TestRequestValidator(t *testing.T) {
 			w.Write([]byte("This is a test!"))
 		})
 	})
-	r.ServeHTTP(w, req)
 
-	if status := w.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
-	}
+	runTests(t, r, tests)
 }
 
 func TestSignUpValidator(t *testing.T) {
+	initUserAPI()
 	initAuthenticationAPI()
 
-	user := domain.User{Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith"}
-
-	var m []byte
-	var err error
-	if m, err = json.Marshal(user); err != nil {
-		t.Fatal("error marshaling test user")
+	tests := []*test{
+		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, "This is a test!"},
 	}
-
-	req, err := http.NewRequest("PUT", "/users", bytes.NewReader(m))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	req.Header.Add("Content-Type", "application/json")
-	w := httptest.NewRecorder()
 
 	r := chi.NewRouter()
 	r.Route("/users", func(r chi.Router) {
@@ -97,45 +76,20 @@ func TestSignUpValidator(t *testing.T) {
 		r.Use(AApi.SignUpValidator)
 		r.Put("/", UApi.CreateUser)
 	})
-	r.ServeHTTP(w, req)
 
-	if status := w.Code; status != http.StatusCreated {
-		t.Errorf("handler returned wrong status code: got %v want %v\nbody: %v", status, http.StatusCreated, w.Body)
-	}
-
-	if !ASvc.EmailAvailableInvoked {
-		t.Fatal("expected Authenticate to be invoked")
-	}
+	runTests(t, r, tests)
 }
 
 func TestLogin(t *testing.T) {
 	initAuthenticationAPI()
 	initUserAPI()
 
-	cred := domain.Credentials{Email: "jacob.smith@unb.ca", Password: "password"}
-
-	m, err := json.Marshal(cred)
-	if err != nil {
-		t.Fatal(err)
+	tests := []*test{
+		{"/login", "POST", `{"email":"jacob.smith@unb.ca","password":"password"}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, "This is a test!"},
 	}
 
-	req, err := http.NewRequest("POST", "/login", bytes.NewReader(m))
-	if err != nil {
-		t.Fatal(err)
-	}
+	r := chi.NewRouter()
+	r.Post("/login", AApi.Login)
 
-	req.Header.Add("Content-Type", "application/json")
-
-	w := httptest.NewRecorder()
-	handler := http.HandlerFunc(AApi.Login)
-
-	handler.ServeHTTP(w, req)
-
-	if status := w.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v.\nBody: %v", status, http.StatusOK, w.Body)
-	}
-
-	if !ASvc.AuthenticateInvoked {
-		t.Fatal("expected Authenticate to be invoked")
-	}
+	runTests(t, r, tests)
 }

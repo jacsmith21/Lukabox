@@ -22,6 +22,7 @@ type test struct {
 	url     string
 	method  string
 	reqBody string
+	headers map[string]string
 	status  int
 	resBody string
 }
@@ -32,7 +33,11 @@ func runTests(t *testing.T, r *chi.Mux, tests []*test) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		req.Header.Add("Content-Type", "application/json")
+
+		for k, v := range test.headers {
+			req.Header.Add(k, v)
+		}
+
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, req)
 
@@ -51,10 +56,10 @@ func TestUserCtx(t *testing.T) {
 	initUserAPI()
 
 	userCtxTests := []*test{
-		{"/users/1", "GET", "", http.StatusOK, "This is a test!"},
-		{"/users/3", "GET", "", http.StatusInternalServerError, "{\"message\":\"test error\"}"},
-		{"/users/4", "GET", "", http.StatusNotFound, "{\"message\":\"user not found\"}"},
-		{"/users/ahh", "GET", "", http.StatusBadRequest, "{\"message\":\"unable to parse parameter id\"}"},
+		{"/users/1", "GET", "", nil, http.StatusOK, "This is a test!"},
+		{"/users/3", "GET", "", nil, http.StatusInternalServerError, `{"message":"test error"}`},
+		{"/users/4", "GET", "", nil, http.StatusNotFound, `{"message":"user not found"}`},
+		{"/users/ahh", "GET", "", nil, http.StatusBadRequest, `{"message":"unable to parse parameter id"}`},
 	}
 
 	r := chi.NewRouter()
@@ -72,8 +77,8 @@ func TestUserRequestCtx(t *testing.T) {
 	initUserAPI()
 
 	userRequestCtxTests := []*test{
-		{"/users", "PUT", "{\"email\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\"}", http.StatusOK, "This is a test!"},
-		{"/users", "PUT", "{\"whatisthis\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\"}", http.StatusOK, "This is a test!"},
+		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, "This is a test!"},
+		{"/users", "PUT", `{"whatisthis":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, "This is a test!"},
 	}
 
 	r := chi.NewRouter()
@@ -91,10 +96,10 @@ func TestUserByID(t *testing.T) {
 	initUserAPI()
 
 	userByIDTests := []*test{
-		{"/users/1", "GET", "", http.StatusOK, "{\"id\":1,\"password\":\"password\",\"email\":\"jacob.smith@unb.ca\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\",\"archived\":false}"},
-		{"/users/2", "GET", "", http.StatusOK, "{\"id\":2,\"password\":\"password\",\"email\":\"jacob.smith@unb.ca\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\",\"archived\":false}"},
-		{"/users/3", "GET", "", http.StatusInternalServerError, "{\"message\":\"test error\"}"},
-		{"/users/4", "GET", "", http.StatusNotFound, "{\"message\":\"user not found\"}"},
+		{"/users/1", "GET", "", nil, http.StatusOK, `{"id":1,"password":"password","email":"jacob.smith@unb.ca","firstName":"Jacob","lastName":"Smith","archived":false}`},
+		{"/users/2", "GET", "", nil, http.StatusOK, `{"id":2,"password":"password","email":"jacob.smith@unb.ca","firstName":"Jacob","lastName":"Smith","archived":false}`},
+		{"/users/3", "GET", "", nil, http.StatusInternalServerError, `{"message":"test error"}`},
+		{"/users/4", "GET", "", nil, http.StatusNotFound, `{"message":"user not found"}`},
 	}
 
 	r := chi.NewRouter()
@@ -110,9 +115,9 @@ func TestUsers(t *testing.T) {
 	initUserAPI()
 
 	usersTests := []*test{
-		{"/users", "GET", "", http.StatusOK, "[{\"id\":1,\"password\":\"password\",\"email\":\"jacob.smith@unb.ca\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\",\"archived\":false}]"},
-		{"/users", "GET", "", http.StatusOK, "[]"},
-		{"/users", "GET", "", http.StatusInternalServerError, "{\"message\":\"test error\"}"},
+		{"/users", "GET", "", nil, http.StatusOK, `[{"id":1,"password":"password","email":"jacob.smith@unb.ca","firstName":"Jacob","lastName":"Smith","archived":false}]`},
+		{"/users", "GET", "", nil, http.StatusInternalServerError, `{"message":"test error"}`},
+		{"/users", "GET", "", nil, http.StatusOK, "[]"},
 	}
 
 	r := chi.NewRouter()
@@ -125,12 +130,12 @@ func TestCreateUser(t *testing.T) {
 	initUserAPI()
 
 	createUserTests := []*test{
-		{"/users", "PUT", "{\"email\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\"}", http.StatusCreated, ""},
-		{"/users", "PUT", "{\"email\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\"}", http.StatusInternalServerError, "{\"message\":\"test error\"}"},
-		{"/users", "PUT", "{\"eml\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\"}", http.StatusBadRequest, "{\"message\":\"a user must have an email\"}"},
-		{"/users", "PUT", "{\"email\":\"jacob.smith@unb.ca\",\"passrd\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\"}", http.StatusBadRequest, "{\"message\":\"a user must have a password\"}"},
-		{"/users", "PUT", "{\"email\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"fitName\":\"Jacob\",\"lastName\":\"Smith\"}", http.StatusBadRequest, "{\"message\":\"a user must have a first name\"}"},
-		{"/users", "PUT", "{\"email\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lasame\":\"Smith\"}", http.StatusBadRequest, "{\"message\":\"a user must have a last name\"}"},
+		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusCreated, ""},
+		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusInternalServerError, `{"message":"test error"}`},
+		{"/users", "PUT", `{"eml":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"a user must have an email"}`},
+		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","passrd":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"a user must have a password"}`},
+		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","fitName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"a user must have a first name"}`},
+		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lasame":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"a user must have a last name"}`},
 	}
 
 	r := chi.NewRouter()
@@ -146,9 +151,9 @@ func TestUpdateUser(t *testing.T) {
 	initUserAPI()
 
 	updateUserTests := []*test{
-		{"/users/1", "POST", "{\"ID\":1,\"email\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\",\"Archived\":false}", http.StatusOK, ""},
-		{"/users/1", "POST", "{\"ID\":\"1\",\"email\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\",\"Archived\":false}", http.StatusBadRequest, "{\"message\":\"json: cannot unmarshal string into Go struct field UserRequest.id of type int\"}"},
-		{"/users/1", "POST", "{\"ID\":1,\"email\":\"jacob.smith@unb.ca\",\"password\":\"password\",\"firstName\":\"Jacob\",\"lastName\":\"Smith\",\"Archived\":\"false\"}", http.StatusBadRequest, "{\"message\":\"json: cannot unmarshal string into Go struct field UserRequest.archived of type bool\"}"},
+		{"/users/1", "POST", `{"ID":1,"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith","Archived":false}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, ""},
+		{"/users/1", "POST", `{"ID":"1","email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith","Archived":false}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"json: cannot unmarshal string into Go struct field UserRequest.id of type int"}`},
+		{"/users/1", "POST", `{"ID":1,"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith","Archived":"false"}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"json: cannot unmarshal string into Go struct field UserRequest.archived of type bool"}`},
 	}
 
 	r := chi.NewRouter()
