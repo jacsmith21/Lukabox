@@ -66,21 +66,30 @@ func (a *PillAPI) Pills(w http.ResponseWriter, r *http.Request) {
 
 // UpdatePill updates a pill
 func (a *PillAPI) UpdatePill(w http.ResponseWriter, r *http.Request) {
-	log.WithField("method", "UpdatePill").Warn("starting")
+	log.WithField("method", "UpdatePill").Info("starting")
 	user := r.Context().Value("user").(*domain.User)
 	pill := r.Context().Value("pill").(*domain.Pill)
 
 	if pill.UserID != user.ID {
 		err := errors.New("parameter pill user id should match the parameter user ID")
 		render.Render(w, r, ErrBadRequest(err))
+		return
 	}
 
 	data := &stc.PillRequest{}
 	if err := render.Bind(r, data); err != nil {
 		render.Render(w, r, ErrBadRequest(err))
+		return
 	}
 
 	p := data.Pill
+	if p == nil {
+		err := errors.New("a pill must be supplied")
+		log.WithError(err).Debug("the pill from the request was nil")
+		render.Render(w, r, ErrBadRequest(err))
+		return
+	}
+
 	if p.PillID == 0 {
 		p.PillID = pill.PillID
 	}

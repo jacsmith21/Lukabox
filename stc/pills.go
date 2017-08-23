@@ -24,7 +24,10 @@ type PillRequest struct {
 
 // Bind post-processing PillRequest
 func (pr *PillRequest) Bind(r *http.Request) error {
-	pr.Pill.Archived = false
+	pill := pr.Pill
+	if pill != nil {
+		pr.Pill.Archived = false
+	}
 	return nil
 }
 
