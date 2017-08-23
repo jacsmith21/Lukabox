@@ -51,7 +51,7 @@ func TestUserCtx(t *testing.T) {
 	uSvc := mock.UserService{}
 	uAPI.UserService = &uSvc
 
-	userCtxTests := []*test{
+	tests := []*test{
 		{"/users/1", "GET", "", nil, http.StatusOK, "This is a test!"},
 		{"/users/3", "GET", "", nil, http.StatusInternalServerError, `{"message":"test error"}`},
 		{"/users/4", "GET", "", nil, http.StatusNotFound, `{"message":"user not found"}`},
@@ -79,7 +79,7 @@ func TestUserCtx(t *testing.T) {
 		})
 	})
 
-	runTests(t, r, userCtxTests)
+	runTests(t, r, tests)
 }
 
 func TestUserRequestCtx(t *testing.T) {
@@ -87,7 +87,7 @@ func TestUserRequestCtx(t *testing.T) {
 	uSvc := mock.UserService{}
 	uAPI.UserService = &uSvc
 
-	userRequestCtxTests := []*test{
+	tests := []*test{
 		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, "This is a test!"},
 		{"/users", "PUT", `{"whatisthis":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, "This is a test!"},
 	}
@@ -100,7 +100,7 @@ func TestUserRequestCtx(t *testing.T) {
 		})
 	})
 
-	runTests(t, r, userRequestCtxTests)
+	runTests(t, r, tests)
 }
 
 func TestUserByID(t *testing.T) {
@@ -108,7 +108,7 @@ func TestUserByID(t *testing.T) {
 	uSvc := mock.UserService{}
 	uAPI.UserService = &uSvc
 
-	userByIDTests := []*test{
+	tests := []*test{
 		{"/users/1", "GET", "", nil, http.StatusOK, `{"id":1,"password":"password","email":"jacob.smith@unb.ca","firstName":"Jacob","lastName":"Smith","archived":false}`},
 		{"/users/3", "GET", "", nil, http.StatusInternalServerError, `{"message":"test error"}`},
 		{"/users/4", "GET", "", nil, http.StatusNotFound, `{"message":"user not found"}`},
@@ -129,7 +129,7 @@ func TestUserByID(t *testing.T) {
 		r.Get("/", uAPI.UserByID)
 	})
 
-	runTests(t, r, userByIDTests)
+	runTests(t, r, tests)
 }
 
 func TestUsers(t *testing.T) {
@@ -168,18 +168,19 @@ func TestCreateUser(t *testing.T) {
 	uSvc := mock.UserService{}
 	uAPI.UserService = &uSvc
 
-	createUserTests := []*test{
-		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusCreated, ""},
+	tests := []*test{
 		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusInternalServerError, `{"message":"test error"}`},
+		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusCreated, ""},
+		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstame":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"Key: 'User.FirstName' Error:Field validation for 'FirstName' failed on the 'required' tag"}`},
 	}
 
 	count := 0
 	uSvc.InsertUserFn = func(user *domain.User) error {
 		count++
 		if count == 1 {
-			return nil
+			return errors.New("test error")
 		}
-		return errors.New("test error")
+		return nil
 	}
 
 	r := chi.NewRouter()
@@ -188,7 +189,7 @@ func TestCreateUser(t *testing.T) {
 		r.Put("/", uAPI.CreateUser)
 	})
 
-	runTests(t, r, createUserTests)
+	runTests(t, r, tests)
 }
 
 func TestUpdateUser(t *testing.T) {
@@ -196,7 +197,7 @@ func TestUpdateUser(t *testing.T) {
 	uSvc := mock.UserService{}
 	uAPI.UserService = &uSvc
 
-	updateUserTests := []*test{
+	tests := []*test{
 		{"/users/1", "POST", `{"ID":1,"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith","Archived":false}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, ""},
 		{"/users/1", "POST", `{"ID":"1","email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith","Archived":false}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"json: cannot unmarshal string into Go struct field UserRequest.id of type int"}`},
 		{"/users/1", "POST", `{"ID":1,"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith","Archived":"false"}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"json: cannot unmarshal string into Go struct field UserRequest.archived of type bool"}`},
@@ -219,5 +220,5 @@ func TestUpdateUser(t *testing.T) {
 		r.Post("/", uAPI.UpdateUser)
 	})
 
-	runTests(t, r, updateUserTests)
+	runTests(t, r, tests)
 }

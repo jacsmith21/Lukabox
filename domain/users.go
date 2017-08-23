@@ -3,10 +3,10 @@ package domain
 //User a reguler user
 type User struct {
 	ID        int    `json:"id"`
-	Password  string `json:"password"`
-	Email     string `json:"email"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
+	Password  string `json:"password" validate:"required"`
+	Email     string `json:"email" validate:"required"`
+	FirstName string `json:"firstName" validate:"required"`
+	LastName  string `json:"lastName" validate:"required"`
 	Archived  bool   `json:"archived"`
 }
 

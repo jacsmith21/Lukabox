@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
+	"github.com/go-playground/validator"
 	"github.com/jacsmith21/lukabox/domain"
 	log "github.com/jacsmith21/lukabox/ext/logrus"
 	"github.com/jacsmith21/lukabox/stc"
@@ -104,12 +105,12 @@ func (a *UserAPI) CreateUser(w http.ResponseWriter, r *http.Request) {
 	log.WithField("method", "CreateUser").Info("starting")
 	user := r.Context().Value("user").(*domain.User)
 
-	//TODO implement validation
-	/*if err := a.UserService.ValidateUser(user); err != nil {
-		log.WithError(err).Debug("user could not be validated")
+	validate := validator.New()
+	if err := validate.Struct(user); err != nil {
+		log.WithError(err).Debug("user wasn't validated")
 		render.Render(w, r, ErrBadRequest(err))
 		return
-	}*/
+	}
 
 	if err := a.UserService.InsertUser(user); err != nil {
 		log.WithError(err).Error("error inserting user")
