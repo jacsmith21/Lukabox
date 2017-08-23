@@ -12,14 +12,6 @@ import (
 	"github.com/jacsmith21/lukabox/mock"
 )
 
-var USvc mock.UserService
-var UApi UserAPI
-
-func initUserAPI() {
-	USvc = mock.UserService{}
-	UApi.UserService = &USvc
-}
-
 type test struct {
 	url     string
 	method  string
@@ -55,7 +47,9 @@ func runTests(t *testing.T, r *chi.Mux, tests []*test) {
 }
 
 func TestUserCtx(t *testing.T) {
-	initUserAPI()
+	uApi := UserAPI{}
+	uSvc := mock.UserService{}
+	uApi.UserService = &uSvc
 
 	userCtxTests := []*test{
 		{"/users/1", "GET", "", nil, http.StatusOK, "This is a test!"},
@@ -64,7 +58,7 @@ func TestUserCtx(t *testing.T) {
 		{"/users/ahh", "GET", "", nil, http.StatusBadRequest, `{"message":"unable to parse parameter id"}`},
 	}
 
-	USvc.UserByIDFn = func(id int) (*domain.User, error) {
+	uSvc.UserByIDFn = func(id int) (*domain.User, error) {
 		if id == 1 {
 			user := domain.User{ID: 1, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}
 			return &user, nil
@@ -79,7 +73,7 @@ func TestUserCtx(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
-		r.Use(UApi.UserCtx)
+		r.Use(uApi.UserCtx)
 		r.Get("/", func(w http.ResponseWriter, request *http.Request) {
 			w.Write([]byte("This is a test!"))
 		})
@@ -89,7 +83,9 @@ func TestUserCtx(t *testing.T) {
 }
 
 func TestUserRequestCtx(t *testing.T) {
-	initUserAPI()
+	uApi := UserAPI{}
+	uSvc := mock.UserService{}
+	uApi.UserService = &uSvc
 
 	userRequestCtxTests := []*test{
 		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, "This is a test!"},
@@ -98,7 +94,7 @@ func TestUserRequestCtx(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users", func(r chi.Router) {
-		r.Use(UApi.UserRequestCtx)
+		r.Use(uApi.UserRequestCtx)
 		r.Put("/", func(w http.ResponseWriter, request *http.Request) {
 			w.Write([]byte("This is a test!"))
 		})
@@ -108,7 +104,9 @@ func TestUserRequestCtx(t *testing.T) {
 }
 
 func TestUserByID(t *testing.T) {
-	initUserAPI()
+	uApi := UserAPI{}
+	uSvc := mock.UserService{}
+	uApi.UserService = &uSvc
 
 	userByIDTests := []*test{
 		{"/users/1", "GET", "", nil, http.StatusOK, `{"id":1,"password":"password","email":"jacob.smith@unb.ca","firstName":"Jacob","lastName":"Smith","archived":false}`},
@@ -117,21 +115,23 @@ func TestUserByID(t *testing.T) {
 		{"/users/4", "GET", "", nil, http.StatusNotFound, `{"message":"user not found"}`},
 	}
 
-	USvc.UserByIDFn = func(id int) (*domain.User, error) {
+	uSvc.UserByIDFn = func(id int) (*domain.User, error) {
 		return &domain.User{ID: id, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}, nil
 	}
 
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
-		r.Use(UApi.UserCtx)
-		r.Get("/", UApi.UserByID)
+		r.Use(uApi.UserCtx)
+		r.Get("/", uApi.UserByID)
 	})
 
 	runTests(t, r, userByIDTests)
 }
 
 func TestUsers(t *testing.T) {
-	initUserAPI()
+	uApi := UserAPI{}
+	uSvc := mock.UserService{}
+	uApi.UserService = &uSvc
 
 	tests := []*test{
 		{"/users", "GET", "", nil, http.StatusOK, `[{"id":1,"password":"password","email":"jacob.smith@unb.ca","firstName":"Jacob","lastName":"Smith","archived":false}]`},
@@ -140,7 +140,7 @@ func TestUsers(t *testing.T) {
 	}
 
 	count := 0
-	USvc.UsersFn = func() ([]*domain.User, error) {
+	uSvc.UsersFn = func() ([]*domain.User, error) {
 		count++
 		if count == 1 {
 			users := []*domain.User{
@@ -154,13 +154,15 @@ func TestUsers(t *testing.T) {
 	}
 
 	r := chi.NewRouter()
-	r.Get("/users", UApi.Users)
+	r.Get("/users", uApi.Users)
 
 	runTests(t, r, tests)
 }
 
 func TestCreateUser(t *testing.T) {
-	initUserAPI()
+	uApi := UserAPI{}
+	uSvc := mock.UserService{}
+	uApi.UserService = &uSvc
 
 	createUserTests := []*test{
 		{"/users", "PUT", `{"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith"}`, map[string]string{"Content-Type": "application/json"}, http.StatusCreated, ""},
@@ -168,7 +170,7 @@ func TestCreateUser(t *testing.T) {
 	}
 
 	count := 0
-	USvc.InsertUserFn = func(user *domain.User) error {
+	uSvc.InsertUserFn = func(user *domain.User) error {
 		count++
 		if count == 1 {
 			return nil
@@ -178,15 +180,17 @@ func TestCreateUser(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users", func(r chi.Router) {
-		r.Use(UApi.UserRequestCtx)
-		r.Put("/", UApi.CreateUser)
+		r.Use(uApi.UserRequestCtx)
+		r.Put("/", uApi.CreateUser)
 	})
 
 	runTests(t, r, createUserTests)
 }
 
 func TestUpdateUser(t *testing.T) {
-	initUserAPI()
+	uApi := UserAPI{}
+	uSvc := mock.UserService{}
+	uApi.UserService = &uSvc
 
 	updateUserTests := []*test{
 		{"/users/1", "POST", `{"ID":1,"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith","Archived":false}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, ""},
@@ -194,11 +198,11 @@ func TestUpdateUser(t *testing.T) {
 		{"/users/1", "POST", `{"ID":1,"email":"jacob.smith@unb.ca","password":"password","firstName":"Jacob","lastName":"Smith","Archived":"false"}`, map[string]string{"Content-Type": "application/json"}, http.StatusBadRequest, `{"message":"json: cannot unmarshal string into Go struct field UserRequest.archived of type bool"}`},
 	}
 
-	USvc.UserByIDFn = func(id int) (*domain.User, error) {
+	uSvc.UserByIDFn = func(id int) (*domain.User, error) {
 		return &domain.User{ID: id, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}, nil
 	}
 
-	USvc.UpdateUserFn = func(id int, user *domain.User) error {
+	uSvc.UpdateUserFn = func(id int, user *domain.User) error {
 		if id != 1 {
 			return errors.New("expected id to be 1")
 		}
@@ -207,8 +211,8 @@ func TestUpdateUser(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
-		r.Use(UApi.UserCtx)
-		r.Post("/", UApi.UpdateUser)
+		r.Use(uApi.UserCtx)
+		r.Post("/", uApi.UpdateUser)
 	})
 
 	runTests(t, r, updateUserTests)

@@ -49,11 +49,11 @@ func (a *AuthenticationAPI) SignUpValidator(next http.Handler) http.Handler {
 
 		available, err := a.AuthenticationService.EmailAvailable(email)
 		if err != nil {
-			render.Render(w, r, ErrBadRequest(errors.New("email taken")))
+			render.Render(w, r, ErrBadRequest(err))
 			return
 		}
 		if !available {
-			fmt.Fprint(w, a)
+			render.Render(w, r, ErrConflict(errors.New("email unavailable")))
 		}
 
 		next.ServeHTTP(w, r)
@@ -89,7 +89,19 @@ func (a *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 
 	log.Debug("Creating Token")
 	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
-	user, _ := a.UserService.UserByEmail(c.Credentials.Email)
+
+	credentials := c.Credentials
+	if credentials == nil {
+		err := errors.New("credentials must be supplied")
+		render.Render(w, r, ErrBadRequest(err))
+	}
+
+	log.WithField("userbyemail", a.AuthenticationService).Info("Sfjaskflsadfhsaldkf")
+	user, err := a.UserService.UserByEmail(credentials.Email)
+	if err != nil {
+		render.Render(w, r, ErrBadRequest(err))
+	}
+
 	claims := jwtauth.Claims{"id": user.ID}
 	log.WithField("id", user.ID).Debug("adding id to claims")
 	_, tokenString, _ := tokenAuth.Encode(claims)

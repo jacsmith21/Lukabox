@@ -25,7 +25,7 @@ func (e *ErrResponse) Render(w http.ResponseWriter, r *http.Request) error {
 func ErrBadRequest(err error) render.Renderer {
 	return &ErrResponse{
 		Err:            err,
-		HTTPStatusCode: 400,
+		HTTPStatusCode: http.StatusBadRequest,
 		Message:        err.Error(),
 	}
 }
@@ -34,7 +34,7 @@ func ErrBadRequest(err error) render.Renderer {
 func ErrNotFound(err error) render.Renderer {
 	return &ErrResponse{
 		Err:            err,
-		HTTPStatusCode: 404,
+		HTTPStatusCode: http.StatusNotFound,
 		Message:        err.Error(),
 	}
 }
@@ -43,10 +43,18 @@ func ErrNotFound(err error) render.Renderer {
 func ErrInternalServerError(err error) render.Renderer {
 	return &ErrResponse{
 		Err:            err,
-		HTTPStatusCode: 500,
+		HTTPStatusCode: http.StatusInternalServerError,
+		Message:        err.Error(),
+	}
+}
+
+func ErrConflict(err error) render.Renderer {
+	return &ErrResponse{
+		Err:            err,
+		HTTPStatusCode: http.StatusConflict,
 		Message:        err.Error(),
 	}
 }
 
 // ErrUnauthorized 401 error
-var ErrUnauthorized = &ErrResponse{HTTPStatusCode: 401, Message: "Unauthorized"}
+var ErrUnauthorized = &ErrResponse{HTTPStatusCode: http.StatusUnauthorized, Message: "Unauthorized"}

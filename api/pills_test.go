@@ -11,16 +11,10 @@ import (
 	"github.com/jacsmith21/lukabox/mock"
 )
 
-var PApi PillAPI
-var PSvc mock.PillService
-
-func initPillAPI() {
-	PSvc = mock.PillService{}
-	PApi.PillService = &PSvc
-}
-
 func TestPillCtx(t *testing.T) {
-	initPillAPI()
+	pApi := PillAPI{}
+	pSvc := mock.PillService{}
+	pApi.PillService = &pSvc
 
 	tests := []*test{
 		{"/pills/1", "", "GET", nil, http.StatusOK, "This is a test!"},
@@ -29,7 +23,7 @@ func TestPillCtx(t *testing.T) {
 	}
 
 	d := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
-	PSvc.PillFn = func(id int) (*domain.Pill, error) {
+	pSvc.PillFn = func(id int) (*domain.Pill, error) {
 		if id == 1 {
 			pill := domain.Pill{PillID: 1, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{d}, Archived: false}
 			return &pill, nil
@@ -42,7 +36,7 @@ func TestPillCtx(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/pills/{pillId}", func(r chi.Router) {
-		r.Use(PApi.PillCtx)
+		r.Use(pApi.PillCtx)
 		r.Get("/", func(w http.ResponseWriter, request *http.Request) {
 			w.Write([]byte("This is a test!"))
 		})
@@ -52,8 +46,13 @@ func TestPillCtx(t *testing.T) {
 }
 
 func TestPills(t *testing.T) {
-	initPillAPI()
-	initUserAPI()
+	pApi := PillAPI{}
+	pSvc := mock.PillService{}
+	pApi.PillService = &pSvc
+
+	uApi := UserAPI{}
+	uSvc := mock.UserService{}
+	uApi.UserService = &uSvc
 
 	tests := []*test{
 		{"/users/1/pills", "", "GET", nil, http.StatusOK, `[{"pillId":1,"id":1,"name":"DoxyPoxy","daysOfWeek":[1],"timesOfDay":["2009-11-10T23:00:00Z"],"archived":false}]`},
@@ -61,7 +60,7 @@ func TestPills(t *testing.T) {
 	}
 
 	d := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
-	PSvc.PillsFn = func(id int) ([]*domain.Pill, error) {
+	pSvc.PillsFn = func(id int) ([]*domain.Pill, error) {
 		if id != 1 {
 			return nil, nil
 		}
@@ -71,22 +70,27 @@ func TestPills(t *testing.T) {
 		return pills, nil
 	}
 
-	USvc.UserByIDFn = func(id int) (*domain.User, error) {
+	uSvc.UserByIDFn = func(id int) (*domain.User, error) {
 		return &domain.User{ID: id, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}, nil
 	}
 
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
-		r.Use(UApi.UserCtx)
-		r.Get("/pills", PApi.Pills)
+		r.Use(uApi.UserCtx)
+		r.Get("/pills", pApi.Pills)
 	})
 
 	runTests(t, r, tests)
 }
 
 func TestUpdatePill(t *testing.T) {
-	initPillAPI()
-	initUserAPI()
+	pApi := PillAPI{}
+	pSvc := mock.PillService{}
+	pApi.PillService = &pSvc
+
+	uApi := UserAPI{}
+	uSvc := mock.UserService{}
+	uApi.UserService = &uSvc
 
 	var tests = []*test{
 		{"/users/1/pills/1", "POST", `{"pillId":1,"id":1,"name":"DoxyPoxy","daysOfWeek":[1],"timesOfDay":["2009-11-10T23:00:00Z"],"archived":false}`, map[string]string{"Content-Type": "application/json"}, http.StatusOK, ""},
@@ -95,15 +99,15 @@ func TestUpdatePill(t *testing.T) {
 	}
 
 	d := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
-	PSvc.PillFn = func(id int) (*domain.Pill, error) {
+	pSvc.PillFn = func(id int) (*domain.Pill, error) {
 		return &domain.Pill{PillID: id, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{d}, Archived: false}, nil
 	}
 
-	USvc.UserByIDFn = func(id int) (*domain.User, error) {
+	uSvc.UserByIDFn = func(id int) (*domain.User, error) {
 		return &domain.User{ID: id, Email: "jacob.smith@unb.ca", Password: "password", FirstName: "Jacob", LastName: "Smith", Archived: false}, nil
 	}
 
-	PSvc.UpdatePillFn = func(id int, pill *domain.Pill) error {
+	pSvc.UpdatePillFn = func(id int, pill *domain.Pill) error {
 		if id != 1 {
 			return errors.New("pill not found")
 		}
@@ -112,10 +116,10 @@ func TestUpdatePill(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Route("/users/{userId}", func(r chi.Router) {
-		r.Use(UApi.UserCtx)
+		r.Use(uApi.UserCtx)
 		r.Route("/pills/{pillId}", func(r chi.Router) {
-			r.Use(PApi.PillCtx)
-			r.Post("/", PApi.UpdatePill)
+			r.Use(pApi.PillCtx)
+			r.Post("/", pApi.UpdatePill)
 		})
 	})
 
