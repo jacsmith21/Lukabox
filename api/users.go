@@ -25,6 +25,10 @@ func (a *UserAPI) UserCtx(next http.Handler) http.Handler {
 		log.WithField("method", "UserCtx").Info("starting")
 
 		userID := chi.URLParam(r, "userId")
+		if userID == "" {
+			render.Render(w, r, ErrBadRequest(errors.New("user id must be supplied")))
+			return
+		}
 		log.WithField("id", userID).Debug("user id from paramter")
 
 		id, err := strconv.Atoi(userID)

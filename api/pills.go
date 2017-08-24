@@ -24,6 +24,10 @@ func (a *PillAPI) PillCtx(next http.Handler) http.Handler {
 		log.WithField("method", "PillCtx").Info("starting")
 
 		pillID := chi.URLParam(r, "pillId")
+		if pillID == "" {
+			render.Render(w, r, ErrBadRequest(errors.New("pill id must be supplied")))
+			return
+		}
 		log.WithField("id", pillID).Debug("pill id from parameter")
 
 		id, err := strconv.Atoi(pillID)

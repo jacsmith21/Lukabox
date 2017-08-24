@@ -18,9 +18,15 @@ $ vod run main.go
 ```
 
 ## TODO
-* Finish user tests then work your way back to authentication and pill tests
-* Ensure mocks are refactored
-* Ensure the tests are enforcing certain messages
+* Get box working!
+* Create schema for everything
+* Rename the stc package
 
 ## References
+* https://medium.com/@benbjohnson/standard-package-layout-7cdbc8391fc1
 * https://forum.golangbridge.org/t/comparing-the-structure-of-web-applications/1198/16
+
+## Things I Need To Research
+* Research schemas for golang
+* Consistency stuff... how should one update fields in a database?
+* More authentication stuff
