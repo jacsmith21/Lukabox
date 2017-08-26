@@ -4,21 +4,32 @@ import "time"
 
 // Box a box
 type Box struct {
-	BoxID  int
+	ID     int
 	UserID int
 }
 
-// Open an opening event
-type Open struct {
-	OpenID int
+// OpenEvent an opening event
+type OpenEvent struct {
+	ID     int
+	CompID int
+	BoxID  int
+	Time   time.Time
+}
+
+// CloseEvent a closing event
+type CloseEvent struct {
+	ID     int
+	CompID int
 	BoxID  int
 	Time   time.Time
 }
 
 // BoxService database service
 type BoxService interface {
-	Boxes() ([]*Box, error)
-	BoxByID(id int) (*Box, error)
+	Boxes(userID int) ([]*Box, error)
+	Box(userID int, ID int) (*Box, error)
 	InsertBox(box *Box) error
 	UpdateBox(id int, box *Box) error
+	InsertOpenEvent(opendEvent *OpenEvent) error
+	InsertCloseEvent(opendEvent *CloseEvent) error
 }

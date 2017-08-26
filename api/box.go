@@ -14,8 +14,7 @@ import (
 
 // BoxAPI the services used
 type BoxAPI struct {
-	BoxService  domain.BoxService
-	UserService domain.UserService
+	BoxService domain.BoxService
 }
 
 // BoxCtx creates a box context
@@ -23,7 +22,7 @@ func (a *BoxAPI) BoxCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.WithField("method", "BoxCtx").Info("starting")
 
-		boxID := chi.URLParam(r, "boxId")
+		boxID := chi.URLParam(r, "boxID")
 		if boxID == "" {
 			render.Render(w, r, ErrBadRequest(errors.New("box id must be supplied")))
 			return
@@ -36,7 +35,15 @@ func (a *BoxAPI) BoxCtx(next http.Handler) http.Handler {
 			return
 		}
 
-		box, err := a.BoxService.BoxByID(id)
+		inter := r.Context().Value("user")
+		if inter == nil {
+			log.Error("no user in box context")
+			render.Render(w, r, ErrBadRequest(errors.New("no user in box context")))
+			return
+		}
+		user := inter.(*domain.User)
+
+		box, err := a.BoxService.Box(user.ID, id)
 		if err != nil {
 			render.Render(w, r, ErrBadRequest(err))
 			return
@@ -51,41 +58,10 @@ func (a *BoxAPI) BoxCtx(next http.Handler) http.Handler {
 	})
 }
 
-// CompCtx compartment context
-func (a *BoxAPI) CompCtx(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.WithField("method", "CompCtx").Info("starting")
-
-		c := r.URL.Query().Get("compartment")
-		if c == "" {
-			render.Render(w, r, ErrBadRequest(errors.New("box id must be supplied")))
-			return
-		}
-		log.WithField("compartment", c).Debug("compartment number from the query")
-
-		compartment, err := strconv.Atoi(c)
-		if err != nil {
-			render.Render(w, r, ErrBadRequest(err))
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), "compartment", compartment)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
 // Open open a compartment in a box
 func (a *BoxAPI) Open(w http.ResponseWriter, r *http.Request) {
 	log.WithField("method", "Open").Info("starting")
-	box := r.Context().Value("box").(*domain.Box)
-	//compartment := r.Context().Value("compartment").(int)
-
-	userID := box.UserID
-	_, err := a.UserService.UserByID(userID)
-	if err != nil {
-		render.Render(w, r, ErrBadRequest(err))
-		return
-	}
+	//box := r.Context().Value("box").(*domain.Box)
 
 	//TODO modify model & context so that you pass in an open event
 }

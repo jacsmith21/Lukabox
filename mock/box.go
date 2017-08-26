@@ -8,26 +8,28 @@ import (
 
 // BoxService mock implementation
 type BoxService struct {
-	BoxesFn     func() ([]*domain.Box, error)
-	BoxByIDFn   func(id int) (*domain.Box, error)
-	InsertBoxFn func(box *domain.Box) error
-	UpdateBoxFn func(id int, box *domain.Box) error
+	BoxesFn            func() ([]*domain.Box, error)
+	BoxFn              func(userID int, id int) (*domain.Box, error)
+	InsertBoxFn        func(box *domain.Box) error
+	UpdateBoxFn        func(id int, box *domain.Box) error
+	InsertOpenEventFn  func(openEvent *domain.OpenEvent) error
+	InsertCloseEventFn func(closeEvent *domain.CloseEvent) error
 }
 
 // Boxes mock implementation
-func (s *BoxService) Boxes() ([]*domain.Box, error) {
+func (s *BoxService) Boxes(userID int) ([]*domain.Box, error) {
 	if s.BoxesFn == nil {
 		return nil, errors.New("Boxes not implemented")
 	}
 	return s.BoxesFn()
 }
 
-// BoxByID mock implementation
-func (s *BoxService) BoxByID(id int) (*domain.Box, error) {
-	if s.BoxByIDFn == nil {
-		return nil, errors.New("BoxByIDFn not implemented")
+// Box mock implementation
+func (s *BoxService) Box(userID int, id int) (*domain.Box, error) {
+	if s.BoxFn == nil {
+		return nil, errors.New("BoxFn not implemented")
 	}
-	return s.BoxByIDFn(id)
+	return s.BoxFn(userID, id)
 }
 
 // InsertBox mock implementation
@@ -44,4 +46,20 @@ func (s *BoxService) UpdateBox(id int, box *domain.Box) error {
 		return errors.New("UpdateBoxFn not implemented")
 	}
 	return s.UpdateBoxFn(id, box)
+}
+
+// InsertOpenEvent mock implementation
+func (s *BoxService) InsertOpenEvent(openEvent *domain.OpenEvent) error {
+	if s.InsertOpenEventFn == nil {
+		return errors.New("InsertOpenEventFn not implemented")
+	}
+	return s.InsertOpenEventFn(openEvent)
+}
+
+// InsertCloseEvent mock implementation
+func (s *BoxService) InsertCloseEvent(closeEvent *domain.CloseEvent) error {
+	if s.InsertCloseEventFn == nil {
+		return errors.New("InsertCloseEventFn not implemented")
+	}
+	return s.InsertCloseEventFn(closeEvent)
 }

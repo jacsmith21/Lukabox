@@ -12,12 +12,12 @@ type PillService struct {
 }
 
 var pills = []*domain.Pill{
-	{PillID: 1, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{time.Now()}, Archived: false},
+	{ID: 1, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{time.Now()}, Archived: false},
 }
 
 //CreatePill creates a pill in the database
 func (s *PillService) CreatePill(pill *domain.Pill) error {
-	pill.PillID = pills[len(pills)-1].PillID + 1
+	pill.ID = pills[len(pills)-1].ID + 1
 	pills = append(pills, pill)
 	return nil
 }
@@ -25,7 +25,7 @@ func (s *PillService) CreatePill(pill *domain.Pill) error {
 //Pill retrieves a pill from the database
 func (s *PillService) Pill(id int) (*domain.Pill, error) {
 	for _, p := range pills {
-		if p.PillID == id {
+		if p.ID == id {
 			return p, nil
 		}
 	}
@@ -46,7 +46,7 @@ func (s *PillService) Pills(id int) ([]*domain.Pill, error) {
 //UpdatePill updates a pill in the datbase
 func (s *PillService) UpdatePill(id int, pill *domain.Pill) error {
 	for i, p := range pills {
-		if p.PillID == id {
+		if p.ID == id {
 			pills[i] = pill
 			return nil
 		}

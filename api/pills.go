@@ -94,14 +94,14 @@ func (a *PillAPI) UpdatePill(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if p.PillID == 0 {
-		p.PillID = pill.PillID
+	if p.ID == 0 {
+		p.ID = pill.ID
 	}
 	if p.UserID == 0 {
 		p.UserID = pill.UserID
 	}
 
-	if p.PillID != pill.PillID {
+	if p.ID != pill.ID {
 		err := errors.New("updated pill id must match the parameter pill id")
 		render.Render(w, r, ErrBadRequest(err))
 	}
@@ -110,6 +110,6 @@ func (a *PillAPI) UpdatePill(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, ErrBadRequest(err))
 	}
 
-	a.PillService.UpdatePill(p.PillID, p)
+	a.PillService.UpdatePill(p.ID, p)
 
 }

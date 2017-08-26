@@ -25,10 +25,10 @@ func TestPillCtx(t *testing.T) {
 	d := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
 	pSvc.PillFn = func(id int) (*domain.Pill, error) {
 		if id == 1 {
-			pill := domain.Pill{PillID: 1, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{d}, Archived: false}
+			pill := domain.Pill{ID: 1, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{d}, Archived: false}
 			return &pill, nil
 		} else if id == 2 {
-			pill := domain.Pill{PillID: 2, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{d}, Archived: false}
+			pill := domain.Pill{ID: 2, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{d}, Archived: false}
 			return &pill, nil
 		}
 		return nil, nil
@@ -65,7 +65,7 @@ func TestPills(t *testing.T) {
 			return nil, nil
 		}
 		pills := []*domain.Pill{
-			{PillID: 1, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1}, TimesOfDay: []time.Time{d}, Archived: false},
+			{ID: 1, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1}, TimesOfDay: []time.Time{d}, Archived: false},
 		}
 		return pills, nil
 	}
@@ -100,7 +100,7 @@ func TestUpdatePill(t *testing.T) {
 
 	d := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
 	pSvc.PillFn = func(id int) (*domain.Pill, error) {
-		return &domain.Pill{PillID: id, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{d}, Archived: false}, nil
+		return &domain.Pill{ID: id, UserID: 1, Name: "DoxyPoxy", DaysOfWeek: []int{1, 2, 3, 4, 5, 6, 7}, TimesOfDay: []time.Time{d}, Archived: false}, nil
 	}
 
 	uSvc.UserByIDFn = func(id int) (*domain.User, error) {
