@@ -2,14 +2,13 @@ package api
 
 import (
 	"context"
-	"errors"
 	"net/http"
-	"strconv"
 
-	"github.com/go-chi/chi"
-	"github.com/go-chi/render"
+	"github.com/go-playground/validator"
 	"github.com/jacsmith21/lukabox/domain"
-	log "github.com/jacsmith21/lukabox/ext/logrus"
+	"github.com/jacsmith21/lukabox/ext/log"
+	"github.com/jacsmith21/lukabox/ext/render"
+	"github.com/jacsmith21/lukabox/stc"
 )
 
 // BoxAPI the services used
@@ -17,43 +16,22 @@ type BoxAPI struct {
 	BoxService domain.BoxService
 }
 
-// BoxCtx creates a box context
-func (a *BoxAPI) BoxCtx(next http.Handler) http.Handler {
+// OpenEventRequestCtx OpenEventRequestCtx
+func (a *BoxAPI) OpenEventRequestCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.WithField("method", "BoxCtx").Info("starting")
+		log.WithField("method", "OpenEventRequestCtx").Info("starting")
+		openEventRequest := &stc.OpenEventRequest{}
 
-		boxID := chi.URLParam(r, "boxID")
-		if boxID == "" {
-			render.Render(w, r, ErrBadRequest(errors.New("box id must be supplied")))
-			return
-		}
-		log.WithField("id", boxID).Debug("box id from from parameter")
-
-		id, err := strconv.Atoi(boxID)
-		if err != nil {
-			render.Render(w, r, ErrBadRequest(err))
+		if err := render.Bind(r, openEventRequest); err != nil {
+			log.WithError(err).Error("error binding open event req")
+			render.WithError(err).InternalServerError(w, r)
 			return
 		}
 
-		inter := r.Context().Value("user")
-		if inter == nil {
-			log.Error("no user in box context")
-			render.Render(w, r, ErrBadRequest(errors.New("no user in box context")))
-			return
-		}
-		user := inter.(*domain.User)
+		openEvent := openEventRequest.OpenEvent
+		log.WithField("openEvent", openEvent).Debug("open event from the request")
 
-		box, err := a.BoxService.Box(user.ID, id)
-		if err != nil {
-			render.Render(w, r, ErrBadRequest(err))
-			return
-		}
-		if box == nil {
-			render.Render(w, r, ErrNotFound(errors.New("box not found")))
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), "box", box)
+		ctx := context.WithValue(r.Context(), "open", openEvent)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -61,7 +39,23 @@ func (a *BoxAPI) BoxCtx(next http.Handler) http.Handler {
 // Open open a compartment in a box
 func (a *BoxAPI) Open(w http.ResponseWriter, r *http.Request) {
 	log.WithField("method", "Open").Info("starting")
-	//box := r.Context().Value("box").(*domain.Box)
 
-	//TODO modify model & context so that you pass in an open event
+	tmp := r.Context().Value("open")
+	if tmp == nil {
+		render.WithMessage("no open event in context").BadRequest(w, r)
+		return
+	}
+	openEvent := tmp.(*domain.OpenEvent)
+
+	validate := validator.New()
+	if err := validate.Struct(openEvent); err != nil {
+		render.WithError(err).BadRequest(w, r)
+	}
+
+	if err := a.BoxService.InsertOpenEvent(openEvent); err != nil {
+		render.WithError(err).InternalServerError(w, r)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }

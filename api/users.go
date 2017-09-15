@@ -135,5 +135,8 @@ func (a *UserAPI) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user = data.User
-	a.UserService.UpdateUser(user.ID, user)
+	if err := a.UserService.UpdateUser(user.ID, user); err != nil {
+		render.WithError(err).InternalServerError(w, r)
+		return
+	}
 }

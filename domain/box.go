@@ -12,24 +12,20 @@ type Box struct {
 type OpenEvent struct {
 	ID     int
 	CompID int
-	BoxID  int
+	UserID int
 	Time   time.Time
 }
 
 // CloseEvent a closing event
 type CloseEvent struct {
-	ID     int
-	CompID int
-	BoxID  int
-	Time   time.Time
+	ID     int       `json:"id"`
+	CompID int       `json:"compId"`
+	UserID int       `json:"userId" validate:"required"`
+	Time   time.Time `json:"time" validate:"required"`
 }
 
 // BoxService database service
 type BoxService interface {
-	Boxes(userID int) ([]*Box, error)
-	Box(userID int, ID int) (*Box, error)
-	InsertBox(box *Box) error
-	UpdateBox(id int, box *Box) error
-	InsertOpenEvent(opendEvent *OpenEvent) error
-	InsertCloseEvent(opendEvent *CloseEvent) error
+	InsertOpenEvent(openEvent *OpenEvent) error
+	InsertCloseEvent(closeEvent *CloseEvent) error
 }

@@ -1,10 +1,12 @@
 package stc
 
 import (
+	"errors"
 	"net/http"
 
-	"github.com/go-chi/render"
 	"github.com/jacsmith21/lukabox/domain"
+	"github.com/jacsmith21/lukabox/ext/log"
+	"github.com/jacsmith21/lukabox/ext/render"
 )
 
 // OpenEventRequest request structure
@@ -13,7 +15,14 @@ type OpenEventRequest struct {
 }
 
 // Bind post-processing
-func (s *OpenEventRequest) Bind(r *http.ResponseWriter) error {
+func (s *OpenEventRequest) Bind(r *http.Request) error {
+	inter := r.Context().Value("user")
+	if inter == nil {
+		log.Error("no user in open event request context")
+		return errors.New("no user in open event request context")
+	}
+	user := inter.(*domain.User)
+	s.UserID = user.ID
 	return nil
 }
 
