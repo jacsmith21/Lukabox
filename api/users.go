@@ -2,15 +2,14 @@ package api
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/go-chi/render"
 	"github.com/go-playground/validator"
 	"github.com/jacsmith21/lukabox/domain"
-	log "github.com/jacsmith21/lukabox/ext/logrus"
+	"github.com/jacsmith21/lukabox/ext/log"
+	"github.com/jacsmith21/lukabox/ext/render"
 	"github.com/jacsmith21/lukabox/stc"
 )
 
@@ -26,7 +25,7 @@ func (a *UserAPI) UserCtx(next http.Handler) http.Handler {
 
 		userID := chi.URLParam(r, "userId")
 		if userID == "" {
-			render.Render(w, r, ErrBadRequest(errors.New("user id must be supplied")))
+			render.WithMessage("user id must be supplied").BadRequest(w, r)
 			return
 		}
 		log.WithField("id", userID).Debug("user id from paramter")
@@ -34,19 +33,19 @@ func (a *UserAPI) UserCtx(next http.Handler) http.Handler {
 		id, err := strconv.Atoi(userID)
 		if err != nil {
 			log.WithError(err).Debugf("unable to parse %s", userID)
-			render.Render(w, r, ErrBadRequest(errors.New("unable to parse parameter id")))
+			render.WithMessage("unable to parse parameter id").BadRequest(w, r)
 			return
 		}
 
 		user, err := a.UserService.UserByID(id)
 		if err != nil {
 			log.WithError(err).Errorf("error fetching user with id %d", id)
-			render.Render(w, r, ErrInternalServerError(err))
+			render.WithError(err).InternalServerError(w, r)
 			return
 		}
 		if user == nil {
 			log.Debugf("no user found with id %d", id)
-			render.Render(w, r, ErrNotFound(errors.New("user not found")))
+			render.WithMessage("user not found").NotFound(w, r)
 			return
 		}
 
@@ -64,7 +63,7 @@ func (a *UserAPI) UserRequestCtx(next http.Handler) http.Handler {
 		err := render.Bind(r, userRequest)
 		if err != nil {
 			log.WithError(err).Error("error binding user request")
-			render.Render(w, r, ErrInternalServerError(err))
+			render.WithError(err).InternalServerError(w, r)
 			return
 		}
 
@@ -80,9 +79,9 @@ func (a *UserAPI) UserRequestCtx(next http.Handler) http.Handler {
 func (a *UserAPI) UserByID(w http.ResponseWriter, r *http.Request) {
 	log.WithField("method", "UserByID").Info("starting")
 	user := r.Context().Value("user").(*domain.User)
-	if err := render.Render(w, r, stc.NewUserResponse(user)); err != nil {
+	if err := render.Instance(w, r, stc.NewUserResponse(user)); err != nil {
 		log.WithError(err).Error("unable to render user response")
-		render.Render(w, r, ErrInternalServerError(err))
+		render.WithError(err).InternalServerError(w, r)
 		return
 	}
 }
@@ -93,13 +92,13 @@ func (a *UserAPI) Users(w http.ResponseWriter, r *http.Request) {
 	users, err := a.UserService.Users()
 	if err != nil {
 		log.WithError(err).Error("error fetching users")
-		render.Render(w, r, ErrInternalServerError(err))
+		render.WithError(err).InternalServerError(w, r)
 		return
 	}
 
-	if err := render.RenderList(w, r, stc.NewUserListResponse(users)); err != nil {
+	if err := render.List(w, r, stc.NewUserListResponse(users)); err != nil {
 		log.WithError(err).Error("error rendering user list response")
-		render.Render(w, r, ErrInternalServerError(errors.New("error creating response")))
+		render.WithMessage("error creating response").InternalServerError(w, r)
 		return
 	}
 }
@@ -112,13 +111,13 @@ func (a *UserAPI) CreateUser(w http.ResponseWriter, r *http.Request) {
 	validate := validator.New()
 	if err := validate.Struct(user); err != nil {
 		log.WithError(err).Debug("user wasn't validated")
-		render.Render(w, r, ErrBadRequest(err))
+		render.WithError(err).BadRequest(w, r)
 		return
 	}
 
 	if err := a.UserService.InsertUser(user); err != nil {
 		log.WithError(err).Error("error inserting user")
-		render.Render(w, r, ErrInternalServerError(err))
+		render.WithError(err).InternalServerError(w, r)
 		return
 	}
 
@@ -131,7 +130,7 @@ func (a *UserAPI) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	data := &stc.UserRequest{User: user}
 	if err := render.Bind(r, data); err != nil {
-		render.Render(w, r, ErrBadRequest(err))
+		render.WithError(err).BadRequest(w, r)
 		return
 	}
 

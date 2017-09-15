@@ -22,7 +22,7 @@ func TestRequestValidator(t *testing.T) {
 
 	tests := []*test{
 		{"/users/1", "GET", "", map[string]string{"Authorization": "BEARER eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MX0.tjVEMiS5O2yNzclwLdaZ-FuzrhyqOT7UwM9Hfc0ZQ8Q"}, http.StatusOK, "This is a test!"},
-		{"/users/1", "GET", "", map[string]string{"Authorization": "BEARER eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Mn0.-ScBrpAXat0bA0Q-kJnL7xnst1-dd_SsIzseTUPT2wE"}, http.StatusUnauthorized, `{"message":"Unauthorized"}`},
+		{"/users/1", "GET", "", map[string]string{"Authorization": "BEARER eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Mn0.-ScBrpAXat0bA0Q-kJnL7xnst1-dd_SsIzseTUPT2wE"}, http.StatusUnauthorized, `{"message":"unauthorized"}`},
 		{"/users/1", "GET", "", map[string]string{"Authorization": "BEARER eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MX0.tjVFMiS5O2yNzclwLdaZ-FuzrhyqOT7UwM9Hfc0ZQ8Q"}, http.StatusBadRequest, `{"message":"signature is invalid"}`},
 		{"/users/1", "GET", "", map[string]string{"Authorization": "BEARER eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MX0OT7UwM9Hfc0ZQ8Q"}, http.StatusBadRequest, `{"message":"token contains an invalid number of segments"}`},
 	}

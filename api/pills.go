@@ -7,9 +7,9 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/go-chi/render"
 	"github.com/jacsmith21/lukabox/domain"
-	log "github.com/jacsmith21/lukabox/ext/logrus"
+	"github.com/jacsmith21/lukabox/ext/log"
+	"github.com/jacsmith21/lukabox/ext/render"
 	"github.com/jacsmith21/lukabox/stc"
 )
 
@@ -25,24 +25,24 @@ func (a *PillAPI) PillCtx(next http.Handler) http.Handler {
 
 		pillID := chi.URLParam(r, "pillId")
 		if pillID == "" {
-			render.Render(w, r, ErrBadRequest(errors.New("pill id must be supplied")))
+			render.WithMessage("pill id must be supplied").BadRequest(w, r)
 			return
 		}
 		log.WithField("id", pillID).Debug("pill id from parameter")
 
 		id, err := strconv.Atoi(pillID)
 		if err != nil {
-			render.Render(w, r, ErrBadRequest(errors.New("unable to parse parameter id")))
+			render.WithMessage("unable to parse parameter id").BadRequest(w, r)
 			return
 		}
 
 		pill, err := a.PillService.Pill(id)
 		if err != nil {
-			render.Render(w, r, ErrBadRequest(err))
+			render.WithError(err).BadRequest(w, r)
 			return
 		}
 		if pill == nil {
-			render.Render(w, r, ErrNotFound(errors.New("pill not found")))
+			render.WithMessage("pill not found").NotFound(w, r)
 			return
 		}
 
@@ -58,12 +58,13 @@ func (a *PillAPI) Pills(w http.ResponseWriter, r *http.Request) {
 
 	pills, err := a.PillService.Pills(user.ID)
 	if err != nil {
-		render.Render(w, r, ErrBadRequest(err))
+		render.WithError(err).BadRequest(w, r)
+		render.WithError(err).BadRequest(w, r)
 		return
 	}
 
-	if err := render.RenderList(w, r, stc.NewPillListResponse(pills)); err != nil {
-		render.Render(w, r, ErrBadRequest(err))
+	if err := render.List(w, r, stc.NewPillListResponse(pills)); err != nil {
+		render.WithError(err).BadRequest(w, r)
 		return
 	}
 }
@@ -76,13 +77,13 @@ func (a *PillAPI) UpdatePill(w http.ResponseWriter, r *http.Request) {
 
 	if pill.UserID != user.ID {
 		err := errors.New("parameter pill user id should match the parameter user ID")
-		render.Render(w, r, ErrBadRequest(err))
+		render.WithError(err).BadRequest(w, r)
 		return
 	}
 
 	data := &stc.PillRequest{}
 	if err := render.Bind(r, data); err != nil {
-		render.Render(w, r, ErrBadRequest(err))
+		render.WithError(err).BadRequest(w, r)
 		return
 	}
 
@@ -90,7 +91,7 @@ func (a *PillAPI) UpdatePill(w http.ResponseWriter, r *http.Request) {
 	if p == nil {
 		err := errors.New("a pill must be supplied")
 		log.WithError(err).Debug("the pill from the request was nil")
-		render.Render(w, r, ErrBadRequest(err))
+		render.WithError(err).BadRequest(w, r)
 		return
 	}
 
@@ -103,11 +104,11 @@ func (a *PillAPI) UpdatePill(w http.ResponseWriter, r *http.Request) {
 
 	if p.ID != pill.ID {
 		err := errors.New("updated pill id must match the parameter pill id")
-		render.Render(w, r, ErrBadRequest(err))
+		render.WithError(err).BadRequest(w, r)
 	}
 	if p.UserID != user.ID {
 		err := errors.New("updated pill user id does not match parameter user id")
-		render.Render(w, r, ErrBadRequest(err))
+		render.WithError(err).BadRequest(w, r)
 	}
 
 	a.PillService.UpdatePill(p.ID, p)

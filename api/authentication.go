@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/go-chi/jwtauth"
-	"github.com/go-chi/render"
 	"github.com/go-errors/errors"
 	"github.com/jacsmith21/lukabox/domain"
-	log "github.com/jacsmith21/lukabox/ext/logrus"
+	"github.com/jacsmith21/lukabox/ext/log"
+	"github.com/jacsmith21/lukabox/ext/render"
 	"github.com/jacsmith21/lukabox/stc"
 )
 
@@ -23,7 +23,7 @@ func (a *AuthenticationAPI) RequestValidator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, claims, err := jwtauth.FromContext(r.Context())
 		if err != nil {
-			render.Render(w, r, ErrBadRequest(err))
+			render.WithError(err).BadRequest(w, r)
 			return
 		}
 
@@ -34,7 +34,7 @@ func (a *AuthenticationAPI) RequestValidator(next http.Handler) http.Handler {
 
 		id := int(claims["id"].(float64))
 		if user.ID != id {
-			render.Render(w, r, ErrUnauthorized)
+			render.Unauthorized(w, r)
 			return
 		}
 
@@ -50,11 +50,11 @@ func (a *AuthenticationAPI) SignUpValidator(next http.Handler) http.Handler {
 
 		available, err := a.AuthenticationService.EmailAvailable(email)
 		if err != nil {
-			render.Render(w, r, ErrBadRequest(err))
+			render.WithError(err).BadRequest(w, r)
 			return
 		}
 		if !available {
-			render.Render(w, r, ErrConflict(errors.New("email unavailable")))
+			render.WithMessage("email unavailable").Conflict(w, r)
 		}
 
 		next.ServeHTTP(w, r)
@@ -67,7 +67,7 @@ func (a *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 
 	c := &stc.CredentialsRequest{}
 	if err := render.Bind(r, c); err != nil {
-		render.Render(w, r, ErrBadRequest(err))
+		render.WithError(err).BadRequest(w, r)
 		return
 	}
 
@@ -75,7 +75,7 @@ func (a *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 
 	authenticated, err := a.AuthenticationService.Authenticate(c.Credentials.Email, c.Credentials.Password)
 	if err != nil {
-		render.Render(w, r, ErrBadRequest(err))
+		render.WithError(err).BadRequest(w, r)
 		return
 	}
 
@@ -92,12 +92,12 @@ func (a *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 	credentials := c.Credentials
 	if credentials == nil {
 		err := errors.New("credentials must be supplied")
-		render.Render(w, r, ErrBadRequest(err))
+		render.WithError(err).BadRequest(w, r)
 	}
 
 	user, err := a.UserService.UserByEmail(credentials.Email)
 	if err != nil {
-		render.Render(w, r, ErrBadRequest(err))
+		render.WithError(err).BadRequest(w, r)
 		return
 	}
 
@@ -106,8 +106,8 @@ func (a *AuthenticationAPI) Login(w http.ResponseWriter, r *http.Request) {
 	_, tokenString, _ := tokenAuth.Encode(claims)
 	token := &domain.Token{Token: tokenString}
 
-	if err := render.Render(w, r, stc.NewTokenResponse(token)); err != nil {
-		render.Render(w, r, ErrBadRequest(err))
+	if err := render.Instance(w, r, stc.NewTokenResponse(token)); err != nil {
+		render.WithError(err).BadRequest(w, r)
 		return
 	}
 }
