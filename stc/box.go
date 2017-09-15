@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/jacsmith21/lukabox/domain"
-	"github.com/jacsmith21/lukabox/ext/log"
 	"github.com/jacsmith21/lukabox/ext/render"
 )
 
@@ -15,14 +14,29 @@ type OpenEventRequest struct {
 }
 
 // Bind post-processing
-func (s *OpenEventRequest) Bind(r *http.Request) error {
-	inter := r.Context().Value("user")
-	if inter == nil {
-		log.Error("no user in open event request context")
+func (e *OpenEventRequest) Bind(r *http.Request) error {
+	tmp := r.Context().Value("user")
+	if tmp == nil {
 		return errors.New("no user in open event request context")
 	}
-	user := inter.(*domain.User)
-	s.UserID = user.ID
+	user := tmp.(*domain.User)
+	e.UserID = user.ID
+	return nil
+}
+
+// CloseEventRequest CloseEventRequest
+type CloseEventRequest struct {
+	*domain.CloseEvent
+}
+
+// Bind post-processing
+func (e *CloseEventRequest) Bind(r *http.Request) error {
+	tmp := r.Context().Value("user")
+	if tmp == nil {
+		return errors.New("no user in close event request context")
+	}
+	user := tmp.(*domain.User)
+	e.UserID = user.ID
 	return nil
 }
 
@@ -32,7 +46,7 @@ type OpenEventResponse struct {
 }
 
 // Render pre-processing
-func (s *OpenEventResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (e *OpenEventResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 

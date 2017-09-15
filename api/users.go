@@ -63,7 +63,7 @@ func (a *UserAPI) UserRequestCtx(next http.Handler) http.Handler {
 		err := render.Bind(r, userRequest)
 		if err != nil {
 			log.WithError(err).Error("error binding user request")
-			render.WithError(err).InternalServerError(w, r)
+			render.WithError(err).BadRequest(w, r)
 			return
 		}
 

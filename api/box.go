@@ -24,7 +24,7 @@ func (a *BoxAPI) OpenEventRequestCtx(next http.Handler) http.Handler {
 
 		if err := render.Bind(r, openEventRequest); err != nil {
 			log.WithError(err).Error("error binding open event req")
-			render.WithError(err).InternalServerError(w, r)
+			render.WithError(err).BadRequest(w, r)
 			return
 		}
 
@@ -32,6 +32,26 @@ func (a *BoxAPI) OpenEventRequestCtx(next http.Handler) http.Handler {
 		log.WithField("openEvent", openEvent).Debug("open event from the request")
 
 		ctx := context.WithValue(r.Context(), "open", openEvent)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// CloseEventRequestCtx CloseEventRequestCtx
+func (a *BoxAPI) CloseEventRequestCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.WithField("method", "CloseEventRequestCtx").Info("starting")
+		closeEventRequest := &stc.CloseEventRequest{}
+
+		if err := render.Bind(r, closeEventRequest); err != nil {
+			log.WithError(err).Error("error binding close event req")
+			render.WithError(err).BadRequest(w, r)
+			return
+		}
+
+		closeEvent := closeEventRequest.CloseEvent
+		log.WithField("closeEvent", closeEvent).Debug("close event from the request")
+
+		ctx := context.WithValue(r.Context(), "close", closeEvent)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -50,9 +70,35 @@ func (a *BoxAPI) Open(w http.ResponseWriter, r *http.Request) {
 	validate := validator.New()
 	if err := validate.Struct(openEvent); err != nil {
 		render.WithError(err).BadRequest(w, r)
+		return
 	}
 
 	if err := a.BoxService.InsertOpenEvent(openEvent); err != nil {
+		render.WithError(err).InternalServerError(w, r)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+// Close open a compartment in a box
+func (a *BoxAPI) Close(w http.ResponseWriter, r *http.Request) {
+	log.WithField("method", "Close").Info("starting")
+
+	tmp := r.Context().Value("close")
+	if tmp == nil {
+		render.WithMessage("no close event in context").BadRequest(w, r)
+		return
+	}
+	closeEvent := tmp.(*domain.CloseEvent)
+
+	validate := validator.New()
+	if err := validate.Struct(closeEvent); err != nil {
+		render.WithError(err).BadRequest(w, r)
+		return
+	}
+
+	if err := a.BoxService.InsertCloseEvent(closeEvent); err != nil {
 		render.WithError(err).InternalServerError(w, r)
 		return
 	}

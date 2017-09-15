@@ -60,7 +60,7 @@ func main() {
 		r.Get("/", userAPI.Users)
 		r.With(userAPI.UserRequestCtx).With(auth.SignUpValidator).Put("/", userAPI.CreateUser)
 
-		r.Route("/{id}", func(r chi.Router) {
+		r.Route("/{userId}", func(r chi.Router) {
 			r.Use(userAPI.UserCtx)
 			r.Get("/", userAPI.UserByID)
 			r.Post("/", userAPI.UpdateUser)
@@ -70,6 +70,8 @@ func main() {
 				r.Use(auth.RequestValidator)
 				r.Get("/", pillAPI.Pills)
 			})
+
+			r.Route("/box", func(r chi.Router) {})
 		})
 	})
 

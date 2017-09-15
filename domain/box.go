@@ -10,17 +10,17 @@ type Box struct {
 
 // OpenEvent an opening event
 type OpenEvent struct {
-	ID     int
-	CompID int
-	UserID int
-	Time   time.Time
+	ID     int       `json:"id"`
+	CompID int       `json:"compId" validate:"required"`
+	UserID int       `json:"userId"`
+	Time   time.Time `json:"time" validate:"required"`
 }
 
 // CloseEvent a closing event
 type CloseEvent struct {
 	ID     int       `json:"id"`
-	CompID int       `json:"compId"`
-	UserID int       `json:"userId" validate:"required"`
+	CompID int       `json:"compId" validate:"required"`
+	UserID int       `json:"userId"`
 	Time   time.Time `json:"time" validate:"required"`
 }
 
