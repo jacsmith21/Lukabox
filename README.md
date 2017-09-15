@@ -18,15 +18,9 @@ $ vod run main.go
 ```
 
 ## TODO
-* Get box working!
-* Create schema for everything
-* Rename the stc package
+* Check out OAuth for authentication & check out other authentication stuff
+* Get code on google web services for testing with the box
 
 ## References
 * https://medium.com/@benbjohnson/standard-package-layout-7cdbc8391fc1
 * https://forum.golangbridge.org/t/comparing-the-structure-of-web-applications/1198/16
-
-## Things I Need To Research
-* Research schemas for golang
-* Consistency stuff... how should one update fields in a database?
-* More authentication stuff
