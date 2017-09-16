@@ -11,6 +11,8 @@ $ go get github.com/go-chi/jwtauth
 $ go get github.com/go-chi/render
 $ go get github.com/go-chi/chi
 $ go get github.com/Sirupsen/logrus
+$ go get github.com/go-errors/errors
+$ go get github.com/go-playground/validator
 ```
 5. In the `jacsmith21` folder, run:
 ```
