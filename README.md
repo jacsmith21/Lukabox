@@ -1,5 +1,5 @@
 # Lukabox
-This is the backend RESTful API for Lukabox!
+This is the backend RESTful API written in Go!
 
 ## Setup
 1. Install [vod](https://github.com/jacsmith21/vod) & make sure it's in your path
@@ -18,6 +18,10 @@ $ go get github.com/go-playground/validator
 ```
 $ vod run main.go
 ```
+
+or
+
+1. Run: `$ go get github.com/jacsmith21/lukabox`
 
 ## TODO
 * Check out OAuth for authentication & check out other authentication stuff
