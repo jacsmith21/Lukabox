@@ -19,7 +19,7 @@ RUN go get github.com/go-errors/errors
 RUN go get github.com/go-playground/validator
 
 # Build the lukabox command inside the container.
-RUN go install github.com/jacsmith21/lukabox
+RUN go install github.com/jacsmith21/gobackend
 
 # Run the lukabox command when the container starts.
 ENTRYPOINT /go/bin/lukabox
