@@ -1,31 +1,18 @@
-# Lukabox
-This is the backend RESTful API written in Go!
+# Gobackend
+This is the backend RESTful API written in Go! It makes use of chi to manage the API and a whole bunch of other neat libraries for backend stuff.
 
 ## Setup
-1. Install [vod](https://github.com/jacsmith21/vod) & make sure it's in your path
-2. Create the folder stc `src/github.com/jacsmith21` in your GOPATH
-3. Clone this repository in the `jacsmith21` folder
-4. Run:
 ```
-$ go get github.com/go-chi/jwtauth
-$ go get github.com/go-chi/render
-$ go get github.com/go-chi/chi
-$ go get github.com/Sirupsen/logrus
-$ go get github.com/go-errors/errors
-$ go get github.com/go-playground/validator
-```
-5. In the `jacsmith21` folder, run:
-```
-$ vod run main.go
+$ go get github.com/jacsmith21/gobackend
 ```
 
-or
-
-1. Run: `$ go get github.com/jacsmith21/lukabox`
+Go to `$GOPATH/src/github.com/jacsmith21/gobackend` the run:
+```
+go run main.go
+```
 
 ## TODO
 * Check out OAuth for authentication & check out other authentication stuff
-* Get code on google web services for testing with the box
 
 ## References
 * https://medium.com/@benbjohnson/standard-package-layout-7cdbc8391fc1
