@@ -11,6 +11,8 @@ Go to `$GOPATH/src/github.com/jacsmith21/gobackend` the run:
 go run main.go
 ```
 
+There is definitely an easier way to run this. I have also included a Docker file which hasn't been tested for a while :disappointed_relieved:
+
 ## TODO
 * Check out OAuth for authentication & check out other authentication stuff
 
